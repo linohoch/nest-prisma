@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,4 +5,75 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Shop {
+  no          Int       @id @default(autoincrement()) @map("shop_no")
+  name        String    @map("shop_name")
+  discription String
+  latitude    String
+  logitude    String
+  rpstPhoto   String    @map("rpst_photo")
+  star        Int
+  insDate     DateTime  @default(now()) @map("ins_date")
+  upDate      DateTime  @updatedAt @map("up_date")
+  article     Article[]
+  registBy    Int       @map("user_no")
+  regist      User      @relation(fields: [registBy], references: [no])
+}
+
+model User {
+  no           Int       @id @default(autoincrement()) @map("user_no")
+  id           String    @unique @map("user_email")
+  pw           String
+  pwLastChange DateTime  @default(now()) @map("pw_last_change")
+  articles     Article[]
+  shop         Shop[]
+  comment      Comment[]
+  createdAt    DateTime  @default(now())
+  firstName    String    @map("first_name")
+  lastName     String    @map("last_name")
+  provider     String    @map("provider_type")
+}
+
+model Article {
+  no       Int       @id @default(autoincrement()) @map("article_no")
+  userId   String    @map("user_email")
+  user     User      @relation(fields: [userId], references: [id])
+  shopNo   Int?      @map("shop_no")
+  shop     Shop?     @relation(fields: [shopNo], references: [no])
+  title    String
+  contents String
+  hitCnt   Int       @default(0) @map("hit_cnt")
+  likeCnt  Int       @default(0) @map("like_cnt")
+  insDate  DateTime  @default(now()) @map("ins_date")
+  upDate   DateTime  @default(now()) @updatedAt @map("up_date")
+  photos   Photo[]
+  comments Comment[]
+}
+
+model Photo {
+  no        Int      @id @default(autoincrement()) @map("photo_no")
+  articleNo Int?     @map("article_no")
+  article   Article? @relation(fields: [articleNo], references: [no])
+  origin    String   @map("origin_name")
+  upload    String   @map("upload_name")
+  url       String
+  size      Int
+  insDate   DateTime @default(now())
+}
+
+model Comment {
+  no        Int      @id @default(autoincrement()) @map("comment_no")
+  grp       Int
+  seq       Int
+  lv        Int
+  parent    Int
+  articleNo Int      @map("article_no")
+  article   Article  @relation(fields: [articleNo], references: [no])
+  userId    String   @map("user_email")
+  user      User     @relation(fields: [userId], references: [id])
+  contents  String
+  insDate   DateTime @default(now())
+  upDate    DateTime @updatedAt
 }
