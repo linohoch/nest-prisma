@@ -37,3 +37,4 @@ lerna-debug.log*
 /prisma/migrations/
 /.eslintrc.js
 /.prettierrc
+/src/auth/constants.ts
