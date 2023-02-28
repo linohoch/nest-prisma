@@ -1,26 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { User } from '@prisma/client';
-import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
-import { promisify } from 'util';
 import * as bcrypt from 'bcrypt';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 
 @Injectable()
 export class UserService {
   constructor(private prismaService: PrismaService) {}
-
-  // async encrypt(password) {
-  //   const iv = randomBytes(16);
-  //   const key = (await promisify(scrypt)(password, 'salt', 32)) as Buffer;
-  //   const cipher = createCipheriv('aes-256-ctr', key, iv);
-  //
-  //   const textToEncrypt = 'Nest';
-  //   return Buffer.concat([cipher.update(textToEncrypt), cipher.final()]);
-  // }
-  // async decrypt(encryptedText) {
-  //   const decipher = createDecipheriv('aes-256-ctr', key, iv);
-  //   return Buffer.concat([decipher.update(encryptedText), decipher.final()]);
-  // }
 
   async findOne(username: string): Promise<User | null> {
     return this.prismaService.user.findUnique({
@@ -33,12 +19,21 @@ export class UserService {
   }
 
   async createUser(data: User): Promise<User> {
-    data.pw = await bcrypt.hash(data.pw, 10);
-    const createdUser = await this.prismaService.user.create({
-      data: data,
-    });
-    createdUser.pw = null;
-    return createdUser;
+    const user = await this.findOne(data.id);
+    console.log(isNil(user));
+    if (user) {
+      throw new HttpException(
+        'invalid arg, already exist id',
+        HttpStatus.BAD_REQUEST,
+      );
+    } else {
+      data.pw = await bcrypt.hash(data.pw, 10);
+      const createdUser = await this.prismaService.user.create({
+        data: data,
+      });
+      createdUser.pw = null;
+      return createdUser;
+    }
   }
 
   // async updateUser(user: User): Promise<User> {
