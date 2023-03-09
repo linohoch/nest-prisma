@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Inject,
+  InternalServerErrorException,
   Post,
   Request,
   UseGuards,
@@ -18,7 +19,7 @@ import { Public } from './public.decorator';
 // @UseInterceptors(CacheInterceptor)
 @Controller()
 export class AppController {
-  testString = 'chached';
+  testString = 'cached';
   constructor(
     private readonly appService: AppService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -36,5 +37,9 @@ export class AppController {
     }
     await this.cacheManager.set('test', this.testString, { ttl: 300 });
     return this.testString;
+  }
+  @Get('error')
+  throwError() {
+    throw new InternalServerErrorException();
   }
 }

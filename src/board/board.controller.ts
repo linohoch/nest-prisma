@@ -8,11 +8,14 @@ import {
   UseInterceptors,
   ParseFilePipe,
   FileTypeValidator,
-} from '@nestjs/common';
+  Req, Delete, UseFilters
+} from "@nestjs/common";
 import { BoardService } from './board.service';
 import { Article, Photo, Comment, User } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerOptions } from '../config/multerOptions';
+import { Public } from '../public.decorator';
+import { HttpExceptionFilter } from "../filter/http-exception/http-exception.filter";
 
 @Controller('/api/v1/board')
 export class BoardController {
@@ -33,9 +36,29 @@ export class BoardController {
     console.log(body);
   }
 
+  @Public()
   @Get()
   async getAllArticles(): Promise<Article[]> {
     return this.boardService.fetchAllArticles();
+  }
+  @Public()
+  @Get('/article/:articleNo/comment')
+  async getAllComments(@Param('articleNo') no: number): Promise<Comment[]> {
+    return this.boardService.fetchAllComments(no);
+  }
+  @Public()
+  @Post('/article/:articleNo/comment')
+  async addComment(@Body() comment: Comment): Promise<Comment> {
+    return this.boardService.addComment(comment);
+  }
+  @Public()
+  @UseFilters(new HttpExceptionFilter())
+  @Delete('/article/:articleNo/comment/:commentNo')
+  async deleteComment(
+    @Param('commentNo') comment: number,
+    @Param('articleNo') article: number,
+  ): Promise<Comment> {
+    return this.boardService.deleteComment(comment);
   }
 
   //

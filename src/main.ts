@@ -1,7 +1,8 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 import * as csurf from 'csurf';
+import { PrismaClientExceptionFilter } from './filter/prisma-client-exception/prisma-client-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,6 +19,8 @@ async function bootstrap() {
   //   }),
   // );
   // app.use(csurf());
+  // const { httpAdapter } = app.get(HttpAdapterHost);
+
   await app.listen(3000);
 }
 bootstrap();
