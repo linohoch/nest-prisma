@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AuthGuard } from '@nestjs/passport';
-import { LocalAuthGuard } from './auth/local-auth.guard';
+import { LocalAuthGuard } from './auth/guard/local-auth.guard';
 import { Cache } from 'cache-manager';
 import { Public } from './public.decorator';
 

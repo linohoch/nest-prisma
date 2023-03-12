@@ -61,11 +61,11 @@ export class BoardController {
     return this.boardService.deleteComment(comment);
   }
 
-  //
-  // @Get('/article/:id')
-  // async getArticlesByUserId(@Param('id') id): Promise<Article | Article[]> {
-  //   return this.boardService.fetchArticleById(id);
-  // }
+
+  @Get('/article/:articleNo')
+  async getArticleDetail(@Param('articleNo') no): Promise<Article | Article[]> {
+    return this.boardService.fetchArticleDetail(no);
+  }
 
   @Post('/article')
   async addArticle(@Body() article: Article): Promise<Article> {

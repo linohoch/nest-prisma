@@ -23,7 +23,7 @@ export class UserService {
     console.log(isNil(user));
     if (user) {
       throw new HttpException(
-        'invalid arg, already exist id',
+        'Already registered email',
         HttpStatus.BAD_REQUEST,
       );
     } else {

@@ -10,6 +10,14 @@ export class BoardService {
   async fetchAllArticles(): Promise<Article[]> {
     return this.prismaService.article.findMany();
   }
+  async fetchArticleDetail(articleNo: number): Promise<any> {
+    return this.prismaService.article.findUnique({
+      where: {
+        no: Number(articleNo)
+      }
+    })
+  }
+
   async fetchAllComments(articleNo: number): Promise<Comment[]> {
     return this.prismaService.comment.findMany({
       include: {

@@ -5,7 +5,7 @@ import { UserModule } from './user/user.module';
 import { BoardModule } from './board/board.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 // import * as redisStore from 'cache-manager-redis-store';
 import type { RedisClientOptions } from 'redis';
 import * as redisStore from 'cache-manager-ioredis';
@@ -13,6 +13,8 @@ import { HttpExceptionFilter } from './filter/http-exception/http-exception.filt
 import { LoggingInterceptor } from './interceptor/logging/logging.interceptor';
 import { PrismaClientExceptionFilter } from './filter/prisma-client-exception/prisma-client-exception.filter';
 import { LoggingMiddleware } from './middleware/logging/logging.middleware';
+import { JwtService } from "@nestjs/jwt";
+import { JwtRefreshGuard } from "./auth/guard/jwt-refresh.guard";
 // import { PrismaClientExceptionFilter } from "./filter/prisma-client-exception/prisma-client-exception.filter";
 
 @Module({
@@ -37,6 +39,7 @@ import { LoggingMiddleware } from './middleware/logging/logging.middleware';
   controllers: [AppController],
   providers: [
     AppService,
+    JwtService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
