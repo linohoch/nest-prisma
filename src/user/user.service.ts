@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from '../prisma.service';
 import { User, UserToken } from "@prisma/client";
 import * as bcrypt from 'bcrypt';
@@ -6,6 +6,8 @@ import { isNil } from '@nestjs/common/utils/shared.utils';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name)
+
   constructor(private prismaService: PrismaService) {}
 
   async findOne(username: string): Promise<User | null> {
@@ -45,12 +47,20 @@ export class UserService {
     });
   }
 
-  async addToken(username: string, refreshToken: string): Promise<any> {
+  async storeToken(username: string, refreshToken: string, ip: string): Promise<any> {
+    await this.deleteTokens(username)
     const encryptedToken = await bcrypt.hash(refreshToken, 10)
     return this.prismaService.userToken.create({
-      data: { userEmail: username, token: encryptedToken }
+      data: { userEmail: username, token: encryptedToken, ip: ip}
     });
+  }
 
+  deleteTokens(username:string) {
+      return this.prismaService.userToken.deleteMany({
+        where: {
+          userEmail: username
+        }
+      })
   }
 
   // async updateUser(user: User): Promise<User> {

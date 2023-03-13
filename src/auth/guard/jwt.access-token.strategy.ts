@@ -3,12 +3,14 @@ import { PassportStrategy } from '@nestjs/passport';
 import { HttpException, HttpStatus, Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { jwtConstants } from '../constants';
 import { UserService } from "../../user/user.service";
+import { CacheService } from "../../cache/cache.service";
 
 @Injectable()
 export class JwtAccessTokenStrategy extends PassportStrategy(Strategy, 'jwt-access') {
   private readonly logger = new Logger(JwtAccessTokenStrategy.name)
   constructor(
-    private userService: UserService
+    private userService: UserService,
+    private cacheService: CacheService
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -18,10 +20,11 @@ export class JwtAccessTokenStrategy extends PassportStrategy(Strategy, 'jwt-acce
   }
 
   async validate(payload: any) {
-    const user = await this.userService.findOne(payload.username);
-    if (!user) {
-      throw new HttpException('invalid token',HttpStatus.UNAUTHORIZED);
+    const cache = await this.cacheService.getCache(payload.username);
+    // const user = await this.userService.findOne(payload.username);
+    if (cache) {
+      return { username: payload.username };
     }
-    return { username: payload.username };
+    throw new HttpException("invalid token", HttpStatus.UNAUTHORIZED);
   }
 }

@@ -16,6 +16,7 @@ import { LoggingMiddleware } from './middleware/logging/logging.middleware';
 import { JwtService } from "@nestjs/jwt";
 import { JwtRefreshGuard } from "./auth/guard/jwt-refresh.guard";
 // import { PrismaClientExceptionFilter } from "./filter/prisma-client-exception/prisma-client-exception.filter";
+import { CacheService } from './cache/cache.service';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { JwtRefreshGuard } from "./auth/guard/jwt-refresh.guard";
       provide: APP_FILTER,
       useClass: PrismaClientExceptionFilter,
     },
+    CacheService,
   ],
 })
 export class AppModule implements NestModule {

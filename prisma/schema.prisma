@@ -84,5 +84,6 @@ model UserToken {
   userEmail String   @map("user_email")
   user      User     @relation(fields: [userEmail], references: [email])
   token     String
+  ip        String
   insDate   DateTime @default(now())
 }

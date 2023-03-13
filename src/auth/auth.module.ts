@@ -10,6 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { JwtAccessTokenStrategy } from './guard/jwt.access-token.strategy';
 import { JwtRefreshTokenStrategy } from "./guard/jwt.refresh-token.strategy";
+import { CacheService } from "../cache/cache.service";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { JwtRefreshTokenStrategy } from "./guard/jwt.refresh-token.strategy";
     LocalStrategy,
     JwtAccessTokenStrategy,
     JwtRefreshTokenStrategy,
+    CacheService,
     UserService,
     PrismaService,
   ],
