@@ -8,8 +8,8 @@ import { UserService } from '../user/user.service';
 import { PrismaService } from '../prisma.service';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
-import { JwtAccessTokenStrategy } from './guard/jwt.accessToken.strategy';
-import { JwtRefreshTokenStrategy } from "./guard/jwt.refreshToken.strategy";
+import { JwtAccessTokenStrategy } from './guard/jwt.access-token.strategy';
+import { JwtRefreshTokenStrategy } from "./guard/jwt.refresh-token.strategy";
 
 @Module({
   imports: [

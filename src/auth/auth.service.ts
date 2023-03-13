@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
 import { jwtConstants } from "./constants";
+import { compare } from "bcrypt";
+import { PrismaService } from "../prisma.service";
 
 @Injectable()
 export class AuthService {
@@ -12,19 +14,11 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(user: any) {
-    const payload = { username: user.id };
-
+  issueTokens(username) {
     return {
-      username: user.id,
-      access_token: this.jwtService.sign(payload, {
-        secret:jwtConstants.secret,
-        expiresIn: '60s'
-      }),
-      refresh_token: this.jwtService.sign(payload, {
-        secret:jwtConstants.refreshSecret,
-        expiresIn: '1h'
-      })
+      username: username,
+      access_token: this.issueAccessToken(username),
+      refresh_token: this.issueRefreshToken(username)
     };
   }
   async validateUser(username: string, password: string): Promise<any> {
@@ -39,9 +33,41 @@ export class AuthService {
     }
     return null;
   }
-  async reIssueAccessToken(username: string) {
-    console.log('sssss');
-    //TODO
-    return
+
+  async validateRefreshToken(userToken) {
+    return userToken.username
+    //TODO 매칭 수정
+    //input : decoded jwt  ,   db: jwt
+
+    // const encryptedToken = await this.userService.getToken(username);
+    // if(!encryptedToken) {
+    //   throw new UnauthorizedException();
+    // }
+    // const isValid = await bcrypt.compare(userToken, encryptedToken)
+    // if(isValid) {
+    //   return username
+    // }
+    // return null
+  }
+
+  issueAccessToken(username: string) {
+    return this.jwtService.sign({ username: username }, {
+        secret: jwtConstants.secret,
+        expiresIn: jwtConstants.exp,
+        issuer: jwtConstants.iss
+      })
+  }
+
+  issueRefreshToken(username: string) {
+    const refreshToken = this.jwtService.sign({ username: username }, {
+      secret: jwtConstants.refreshSecret,
+      expiresIn: jwtConstants.refreshExp,
+      issuer: jwtConstants.iss
+    });
+    const result = this.userService.addToken(username, refreshToken);
+    if (result) {
+      return refreshToken;
+    }
+    return null;
   }
 }

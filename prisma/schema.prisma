@@ -23,33 +23,34 @@ model Shop {
 }
 
 model User {
-  no           Int       @id @default(autoincrement()) @map("user_no")
-  id           String    @unique @map("user_email")
+  no           Int         @id @default(autoincrement()) @map("user_no")
+  email        String      @unique @map("user_email")
   pw           String
-  pwLastChange DateTime  @default(now()) @map("pw_last_change")
+  pwLastChange DateTime    @default(now()) @map("pw_last_change")
   articles     Article[]
   shop         Shop[]
   comment      Comment[]
-  createdAt    DateTime  @default(now())
-  firstName    String    @map("first_name")
-  lastName     String    @map("last_name")
-  provider     String    @map("provider_type")
+  createdAt    DateTime    @default(now())
+  firstName    String      @map("first_name")
+  lastName     String      @map("last_name")
+  provider     String      @map("provider_type")
+  token        UserToken[]
 }
 
 model Article {
-  no       Int       @id @default(autoincrement()) @map("article_no")
-  userId   String    @map("user_email")
-  user     User      @relation(fields: [userId], references: [id])
-  shopNo   Int?      @map("shop_no")
-  shop     Shop?     @relation(fields: [shopNo], references: [no])
-  title    String
-  contents String
-  hitCnt   Int       @default(0) @map("hit_cnt")
-  likeCnt  Int       @default(0) @map("like_cnt")
-  insDate  DateTime  @default(now()) @map("ins_date")
-  upDate   DateTime  @default(now()) @updatedAt @map("up_date")
-  photos   Photo[]
-  comments Comment[]
+  no        Int       @id @default(autoincrement()) @map("article_no")
+  userEmail String    @map("user_email")
+  user      User      @relation(fields: [userEmail], references: [email])
+  shopNo    Int?      @map("shop_no")
+  shop      Shop?     @relation(fields: [shopNo], references: [no])
+  title     String
+  contents  String
+  hitCnt    Int       @default(0) @map("hit_cnt")
+  likeCnt   Int       @default(0) @map("like_cnt")
+  insDate   DateTime  @default(now()) @map("ins_date")
+  upDate    DateTime  @default(now()) @updatedAt @map("up_date")
+  photos    Photo[]
+  comments  Comment[]
 }
 
 model Photo {
@@ -71,9 +72,17 @@ model Comment {
   parent    Int
   articleNo Int      @map("article_no")
   article   Article  @relation(fields: [articleNo], references: [no])
-  userId    String   @map("user_email")
-  user      User     @relation(fields: [userId], references: [id])
+  userEmail String   @map("user_email")
+  user      User     @relation(fields: [userEmail], references: [email])
   contents  String
   insDate   DateTime @default(now())
   upDate    DateTime @updatedAt
+}
+
+model UserToken {
+  no        Int      @id @default(autoincrement()) @map("Token_no")
+  userEmail String   @map("user_email")
+  user      User     @relation(fields: [userEmail], references: [email])
+  token     String
+  insDate   DateTime @default(now())
 }

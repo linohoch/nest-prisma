@@ -51,7 +51,7 @@ export class BoardService {
         lv: Number(dto.lv) + 1,
         parent: Number(dto.parent),
         articleNo: Number(dto.articleNo),
-        userId: dto.userId,
+        userEmail: dto.userEmail,
         contents: dto.contents,
       },
     });
@@ -106,7 +106,7 @@ export class BoardService {
   async addArticle(article: Article): Promise<Article> {
     return this.prismaService.article.create({
       data: {
-        userId: article.userId,
+        userEmail: article.userEmail,
         title: article.title,
         contents: article.contents,
       },

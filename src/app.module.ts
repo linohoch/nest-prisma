@@ -5,7 +5,7 @@ import { UserModule } from './user/user.module';
 import { BoardModule } from './board/board.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
+import { JwtAccessGuard } from './auth/guard/jwt-access.guard';
 // import * as redisStore from 'cache-manager-redis-store';
 import type { RedisClientOptions } from 'redis';
 import * as redisStore from 'cache-manager-ioredis';
@@ -42,7 +42,11 @@ import { JwtRefreshGuard } from "./auth/guard/jwt-refresh.guard";
     JwtService,
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useClass: JwtAccessGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAccessGuard,
     },
     {
       provide: APP_INTERCEPTOR,
