@@ -19,6 +19,6 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     if (!user) {
       throw new UnauthorizedException("Password mismatch");
     }
-    return user.email;
+    return { username: user.email, roles: user.roles };
   }
 }

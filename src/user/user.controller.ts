@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Post, Put } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from '@prisma/client';
-import { Public } from '../public.decorator';
+import { Public } from '../auth/custom.decorator';
+import { Role } from "../auth/role.enum";
 
 @Controller('/api/v1/user')
 export class UserController {
@@ -21,6 +22,16 @@ export class UserController {
   async findUser(@Body() data): Promise<boolean> {
      return !!await this.userService.findOne(data.email);
 
+  }
+  @Public()
+  @Post('role')
+  async grantRole(@Body() data): Promise<any> {
+    return await this.userService.grantRoles(data.username, Role.Admin)
+  }
+  @Public()
+  @Put('role')
+  async retrieveRole(@Body() data): Promise<any> {
+    return await this.userService.retrieveRole(data.username, Role.Admin)
   }
 
 

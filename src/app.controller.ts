@@ -1,20 +1,8 @@
-import {
-  CACHE_MANAGER,
-  CacheInterceptor,
-  Controller,
-  Get,
-  Inject,
-  InternalServerErrorException,
-  Post,
-  Request,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import { AppService } from './app.service';
-import { AuthGuard } from '@nestjs/passport';
-import { LocalAuthGuard } from './auth/guard/local-auth.guard';
-import { Cache } from 'cache-manager';
-import { Public } from './public.decorator';
+import { CACHE_MANAGER, Controller, Get, Inject, InternalServerErrorException, Request } from "@nestjs/common";
+import { AppService } from "./app.service";
+import { Cache } from "cache-manager";
+import { Public, Roles } from "./auth/custom.decorator";
+import { Role } from "./auth/role.enum";
 
 // @UseInterceptors(CacheInterceptor)
 @Controller()
@@ -41,5 +29,17 @@ export class AppController {
   @Get('error')
   throwError() {
     throw new InternalServerErrorException();
+  }
+
+  @Roles(Role.User)
+  @Get('user')
+  onlyUser(@Request() req) {
+    return req.user;
+  }
+
+  @Roles(Role.Admin)
+  @Get('admin')
+  onlyAdmin(@Request() req) {
+    return req.user;
   }
 }

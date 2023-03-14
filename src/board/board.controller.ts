@@ -14,7 +14,7 @@ import { BoardService } from './board.service';
 import { Article, Photo, Comment, User } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerOptions } from '../config/multerOptions';
-import { Public } from '../public.decorator';
+import { Public } from '../auth/custom.decorator';
 import { HttpExceptionFilter } from "../filter/http-exception/http-exception.filter";
 
 @Controller('/api/v1/board')

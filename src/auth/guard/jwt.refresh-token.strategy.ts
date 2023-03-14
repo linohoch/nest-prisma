@@ -26,11 +26,11 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(Strategy, "jwt-ref
   }
 
   async validate(req: Request, payload: any) {
-    const {username} = await this.authService.validateRefreshToken(payload);
+    const {username, roles} = await this.authService.validateRefreshToken(payload);
     if(username && payload.exp < Date.now() + (60 * 60 * 24) ){
-      return  {username, reissueRefresh: true}
+      return  {username, roles, reissueRefresh: true}
     }
-      return {username, reissueRefresh: false}
+      return {username, roles, reissueRefresh: false}
   }
 
   private static extractJwtFromCookie(req: Request) {

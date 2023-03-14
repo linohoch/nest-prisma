@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { Reflector } from "@nestjs/core";
-import { IS_PUBLIC_KEY } from "../../public.decorator";
+import { IS_PUBLIC_KEY } from "../custom.decorator";
 import { JwtService } from "@nestjs/jwt";
 import { jwtConstants } from "../constants";
 

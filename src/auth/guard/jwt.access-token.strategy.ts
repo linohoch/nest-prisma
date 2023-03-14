@@ -23,7 +23,7 @@ export class JwtAccessTokenStrategy extends PassportStrategy(Strategy, 'jwt-acce
     const cache = await this.cacheService.getCache(payload.username);
     // const user = await this.userService.findOne(payload.username);
     if (cache) {
-      return { username: payload.username };
+      return { username: payload.username, roles: payload.roles };
     }
     throw new HttpException("invalid token", HttpStatus.UNAUTHORIZED);
   }

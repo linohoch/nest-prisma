@@ -35,7 +35,23 @@ model User {
   lastName     String      @map("last_name")
   provider     String      @map("provider_type")
   token        UserToken[]
+  roles        String[]    @default(["user"])
 }
+
+// model UserRole {
+//   no     Int  @id @default(autoincrement()) @map("user_role_no")
+//   userNo Int
+//   user   User @relation(fields: [userNo], references: [no])
+//   roleNo Int
+//   role   Role @relation(fields: [roleNo], references: [no])
+// }
+//
+// model Role {
+//   no       Int        @id @default(autoincrement()) @map("role_no")
+//   name     String
+//   UserRole UserRole[]
+//   upDate   DateTime   @default(now())
+// }
 
 model Article {
   no        Int       @id @default(autoincrement()) @map("article_no")

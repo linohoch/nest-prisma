@@ -26,11 +26,11 @@ export class AuthService {
   ) {
   }
 
-  async issueTokens(username: string, ip: string) {
+  async issueTokens(username: string, roles: string[], ip: string) {
     return {
       username: username,
-      access_token: await this.issueAccessToken(username),
-      refresh_token: this.issueRefreshToken(username, ip)
+      access_token: await this.issueAccessToken(username, roles),
+      refresh_token: this.issueRefreshToken(username, roles, ip)
     };
   }
 
@@ -55,13 +55,16 @@ export class AuthService {
     const isValid = true;
     //TODO 저장방식 변경
     if (isValid) {
-      return userToken.username;
+      return { username:userToken.username, roles:userToken.roles};
     }
     return null;
   }
 
-  async issueAccessToken(username: string) {
-    const token = this.jwtService.sign({ username: username }, {
+  async issueAccessToken(username: string, roles: string[]) {
+    const token = this.jwtService.sign({
+      username: username,
+      roles: roles
+    }, {
       secret: jwtConstants.secret,
       expiresIn: jwtConstants.exp,
       issuer: jwtConstants.iss
@@ -70,8 +73,11 @@ export class AuthService {
     return token;
   }
 
-  issueRefreshToken(username: string, ip: string) {
-    const refreshToken = this.jwtService.sign({ username: username }, {
+  issueRefreshToken(username: string, roles: string[], ip: string) {
+    const refreshToken = this.jwtService.sign({
+      username: username,
+      roles: roles
+    }, {
       secret: jwtConstants.refreshSecret,
       expiresIn: jwtConstants.refreshExp,
       issuer: jwtConstants.iss

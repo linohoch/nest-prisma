@@ -17,6 +17,7 @@ import { JwtService } from "@nestjs/jwt";
 import { JwtRefreshGuard } from "./auth/guard/jwt-refresh.guard";
 // import { PrismaClientExceptionFilter } from "./filter/prisma-client-exception/prisma-client-exception.filter";
 import { CacheService } from './cache/cache.service';
+import { RolesGuard } from "./auth/guard/role.guard";
 
 @Module({
   imports: [
@@ -48,6 +49,10 @@ import { CacheService } from './cache/cache.service';
     {
       provide: APP_GUARD,
       useClass: JwtAccessGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard
     },
     {
       provide: APP_INTERCEPTOR,

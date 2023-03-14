@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { User, UserToken } from "@prisma/client";
 import * as bcrypt from 'bcrypt';
 import { isNil } from '@nestjs/common/utils/shared.utils';
+import { Role } from "../auth/role.enum";
 
 @Injectable()
 export class UserService {
@@ -61,6 +62,27 @@ export class UserService {
           userEmail: username
         }
       })
+  }
+
+  grantRoles(username: string, role: string): Promise<any> {
+      return this.prismaService.user.update({
+        where: {email: username},
+        data: {
+          roles: {
+            push: [role],
+          }
+        }
+      })
+  }
+  retrieveRole(username:string, role: string): Promise<any> {
+    return this.prismaService.user.update({
+      where: {email: username},
+      data: {
+        roles: {
+          set: ['user']
+        }
+      }
+    })
   }
 
   // async updateUser(user: User): Promise<User> {

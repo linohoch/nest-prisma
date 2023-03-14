@@ -10,7 +10,7 @@ import { Observable } from "rxjs";
 import { JwtService } from "@nestjs/jwt";
 import { jwtConstants } from "../constants";
 import { AuthGuard } from "@nestjs/passport";
-import { IS_PUBLIC_KEY } from "../../public.decorator";
+import { IS_PUBLIC_KEY } from "../custom.decorator";
 import { Reflector } from "@nestjs/core";
 import { isUndefined } from "@nestjs/common/utils/shared.utils";
 
