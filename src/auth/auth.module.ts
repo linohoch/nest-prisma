@@ -11,22 +11,30 @@ import { jwtConstants } from './constants';
 import { JwtAccessTokenStrategy } from './guard/jwt.access-token.strategy';
 import { JwtRefreshTokenStrategy } from "./guard/jwt.refresh-token.strategy";
 import { CacheService } from "../cache/cache.service";
+import { DevtoolsModule } from "@nestjs/devtools-integration";
+import { ConfigModule } from "@nestjs/config";
+import { GoogleStrategy } from "./guard/google.strategy";
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
-    JwtModule
+    JwtModule,
+    ConfigModule,
     // JwtModule.register({
     //   secret: jwtConstants.secret,
-    //   signOptions: { expiresIn: '60s' },
+    //   signOptnions: { expiresIn: '60s' },
     // }),
+    DevtoolsModule.register({
+      http: process.env.NODE_ENV !== 'production',
+    }),
   ],
   providers: [
     AuthService,
     LocalStrategy,
     JwtAccessTokenStrategy,
     JwtRefreshTokenStrategy,
+    GoogleStrategy,
     CacheService,
     UserService,
     PrismaService,

@@ -14,6 +14,7 @@ import { jwtConstants } from "./constants";
 import { compare } from "bcrypt";
 import { PrismaService } from "../prisma.service";
 import { CacheService } from "../cache/cache.service";
+import * as http from "http";
 
 @Injectable()
 export class AuthService {
@@ -93,4 +94,17 @@ export class AuthService {
     await this.cacheService.delCache(username);
     return this.userService.deleteTokens(username);
   }
+
+  async oAuthSign(user: any) {
+    const registered = await this.userService.findOne(user.email)
+    if(!registered) {
+      throw new HttpException('need signup first', HttpStatus.ACCEPTED)
+    }
+    if(registered.provider!==user.provider) {
+      throw new HttpException( 'need link', HttpStatus.ACCEPTED)
+    }
+    return registered
+  }
+
+
 }

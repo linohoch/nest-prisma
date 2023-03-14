@@ -4,10 +4,16 @@ import helmet from 'helmet';
 import * as csurf from 'csurf';
 import { PrismaClientExceptionFilter } from './filter/prisma-client-exception/prisma-client-exception.filter';
 import * as cookieParser from "cookie-parser";
+import { ConfigService } from "@nestjs/config";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
+  const configService = app.get(ConfigService);
+  const port = configService.get<string>('server.port');
+  app.enableCors({
+    origin: "http://localhost:4200",
+    credentials: true
+  });
   app.use(helmet());
   app.use(cookieParser());
   // app.use(
@@ -22,7 +28,7 @@ async function bootstrap() {
   // );
   // app.use(csurf());
   // const { httpAdapter } = app.get(HttpAdapterHost);
-
-  await app.listen(3000);
+  await app.listen(port);
+  console.log(`port: ${port}`);
 }
 bootstrap();

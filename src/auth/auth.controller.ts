@@ -6,10 +6,13 @@ import { Public } from "./custom.decorator";
 import { JwtRefreshGuard } from "./guard/jwt-refresh.guard";
 import { response } from "express";
 import { jwtConstants } from "./constants";
+import { AuthGuard } from "@nestjs/passport";
+import { UserService } from "../user/user.service";
 
 @Controller("/api/v1/auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {
+  constructor(private readonly authService: AuthService,
+              private readonly userService: UserService) {
   }
 
   @Public()
@@ -21,9 +24,38 @@ export class AuthController {
     req.res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       secure: true,
+      maxAge: jwtConstants.refreshExp,
+      path: '/'
+    });
+    return result;
+  }
+
+  @UseGuards(AuthGuard("google"))
+  @Get("google")
+  async googleAuth(): Promise<void> {
+
+  }
+
+  @UseGuards(AuthGuard("google"))
+  @Get("google/callback")
+  async googleAuthCallback(@Request() req, @Res() res) {
+    const { email, roles } = await this.authService.oAuthSign(req.user);
+    const { refresh_token, ...result } = await this.authService.issueTokens(email, roles, req.ip);
+    req.res.cookie("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: true,
       maxAge: jwtConstants.refreshExp
     });
     return result;
+  }
+
+  @UseGuards(AuthGuard("google"))
+  @Get("google/link")
+  async googleLink(@Request() req) {
+    const user = await this.userService.updateUser(req.user);
+    if (user) {
+      return HttpStatus.OK;
+    }
   }
 
   @Public()
@@ -44,7 +76,7 @@ export class AuthController {
   }
 
   @Public()
-  @UseGuards(JwtRefreshGuard)
+  @UseGuards(JwtRefreshGuard) //TODO 만약 토큰 안넘어오면, 토큰 못지운다.
   @Delete("logout")
   async logout(@Request() req) {
     await this.authService.deleteToken(req.user.username);

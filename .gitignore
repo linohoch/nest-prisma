@@ -39,3 +39,5 @@ lerna-debug.log*
 /.prettierrc
 /src/auth/constants.ts
 /upload/
+/src/config/development.yaml
+/src/config/production.yaml
