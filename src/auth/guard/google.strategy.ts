@@ -1,10 +1,11 @@
 import { PassportStrategy } from "@nestjs/passport";
 import { Profile, Strategy } from "passport-google-oauth20";
 import { ConfigService, ConfigType } from "@nestjs/config";
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+  private readonly logger = new Logger(GoogleStrategy.name)
   constructor(private configService: ConfigService) {
     super({
       clientID: configService.get<string>("google.clientId"),
@@ -20,14 +21,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: Profile,
   ) {
     const { id, emails, name } = profile
-
-    const user = {
-      // providerId: id,
+    this.logger.log(emails)
+    return {
+      providerId: id,
       provider: 'google',
       fistName: name.givenName,
       lastName: name.familyName,
       email: emails[0].value
     }
-
   }
 }

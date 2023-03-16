@@ -96,7 +96,7 @@ export class AuthService {
   }
 
   async oAuthSign(user: any) {
-    const registered = await this.userService.findOne(user.email)
+    const registered = await this.userService.findOne(user)
     if(!registered) {
       throw new HttpException('need signup first', HttpStatus.ACCEPTED)
     }

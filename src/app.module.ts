@@ -60,10 +60,10 @@ import configuration from "./config/configuration";
       provide: APP_GUARD,
       useClass: RolesGuard
     },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: CacheInterceptor
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: CacheInterceptor
+    // },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor

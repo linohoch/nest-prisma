@@ -14,6 +14,7 @@ import { CacheService } from "../cache/cache.service";
 import { DevtoolsModule } from "@nestjs/devtools-integration";
 import { ConfigModule } from "@nestjs/config";
 import { GoogleStrategy } from "./guard/google.strategy";
+import { GoogleAuthStrategy } from "./guard/google-auth.strategy";
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { GoogleStrategy } from "./guard/google.strategy";
     JwtAccessTokenStrategy,
     JwtRefreshTokenStrategy,
     GoogleStrategy,
+    GoogleAuthStrategy,
     CacheService,
     UserService,
     PrismaService,

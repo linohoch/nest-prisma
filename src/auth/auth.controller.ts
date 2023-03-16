@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, HttpStatus, Post, Request, Res, UseGuards } from "@nestjs/common";
+import { Controller, Delete, Get, HttpStatus, Logger, Post, Request, Res, UseGuards } from "@nestjs/common";
 import { LocalAuthGuard } from "./guard/local-auth.guard";
 import { AuthService } from "./auth.service";
 import { JwtAccessGuard } from "./guard/jwt-access.guard";
@@ -8,11 +8,16 @@ import { response } from "express";
 import { jwtConstants } from "./constants";
 import { AuthGuard } from "@nestjs/passport";
 import { UserService } from "../user/user.service";
+import { OAuth2Client } from "google-auth-library";
+import { ConfigService } from "@nestjs/config";
 
 @Controller("/api/v1/auth")
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name)
+
   constructor(private readonly authService: AuthService,
-              private readonly userService: UserService) {
+              private readonly userService: UserService,
+              private config: ConfigService) {
   }
 
   @Public()
@@ -29,13 +34,35 @@ export class AuthController {
     });
     return result;
   }
+  @Public()
+  @Post("google/callback2")
+  async googleAuthWithNoPassport(@Request() req) {
+    const client_id = this.config.get<string>("google.clientId");
+    const client = new OAuth2Client(client_id);
+    const ticket = await client.verifyIdToken({
+      idToken: req.body.credential,
+      audience: client_id
+    });
+    const payload = ticket.getPayload()
+    const user = payload.email
 
+    const { email, roles } = await this.authService.oAuthSign(user);
+    const { refresh_token, ...result } = await this.authService.issueTokens(email, roles, req.ip);
+    req.res.cookie("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: true,
+      maxAge: jwtConstants.refreshExp,
+      path: '/'
+    });
+    return result;
+  }
+  @Public()
   @UseGuards(AuthGuard("google"))
   @Get("google")
-  async googleAuth(): Promise<void> {
-
+  async googleAuth(@Request() req): Promise<void> {
+    // req.res.header("Access-Control-Allow-Origin", "*")
   }
-
+  @Public()
   @UseGuards(AuthGuard("google"))
   @Get("google/callback")
   async googleAuthCallback(@Request() req, @Res() res) {
@@ -46,7 +73,7 @@ export class AuthController {
       secure: true,
       maxAge: jwtConstants.refreshExp
     });
-    return result;
+    return result
   }
 
   @UseGuards(AuthGuard("google"))

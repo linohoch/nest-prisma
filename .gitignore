@@ -41,3 +41,4 @@ lerna-debug.log*
 /upload/
 /src/config/development.yaml
 /src/config/production.yaml
+/package-lock.json

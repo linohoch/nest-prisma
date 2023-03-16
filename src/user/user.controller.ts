@@ -21,7 +21,6 @@ export class UserController {
   @Post('check')
   async findUser(@Body() data): Promise<boolean> {
      return !!await this.userService.findOne(data.email);
-
   }
   @Public()
   @Post('role')
