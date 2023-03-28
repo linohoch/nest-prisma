@@ -1,36 +1,62 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { Article, Comment } from '@prisma/client';
-import { PageSelect } from './types';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import { Article, Comment, User } from "@prisma/client";
+import { PageSelect } from "./types";
 
 @Injectable()
 export class BoardService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(private prismaService: PrismaService) {
+  }
 
   async fetchAllArticles(): Promise<Article[]> {
-    return this.prismaService.article.findMany();
+    return this.prismaService.article.findMany({
+      orderBy: {
+        insDate: 'desc'
+      }
+    });
   }
+
   async fetchArticleDetail(articleNo: number): Promise<any> {
     return this.prismaService.article.findUnique({
       where: {
         no: Number(articleNo)
       }
-    })
+    });
+  }
+  async fetchArticleDetailHit(articleNo: number): Promise<any> {
+    return this.prismaService.article.update({
+      where: {
+        no: Number(articleNo)
+      },
+      data: {
+        hitCnt: { increment: 1 }
+      }
+    });
   }
 
   async fetchAllComments(articleNo: number): Promise<Comment[]> {
     return this.prismaService.comment.findMany({
-      include: {
-        user: true,
-      },
+      // include: {
+      //   user: {
+      //     select: {
+      //       no: true,
+      //       email: true
+      //     }
+      //   }
+      // },
       where: {
-        articleNo: { equals: articleNo },
+        articleNo: { equals: Number(articleNo) }
       },
-      orderBy: {
-        grp: 'desc',
-        seq: 'asc',
-      },
+      orderBy: [
+        { grp: "desc" },
+        { seq: "asc" }
+      ]
     });
+  }
+
+  async fetchAllCommentsV2(articleNo: number): Promise<Comment[]> {
+    return this.prismaService.$queryRaw`select *
+                                        from get_comments(${articleNo});`;
   }
 
   async addComment(dto: Comment): Promise<Comment> {
@@ -38,11 +64,11 @@ export class BoardService {
       where: {
         articleNo: { equals: Number(dto.articleNo) },
         grp: { equals: Number(dto.grp) },
-        seq: { gt: Number(dto.seq) },
+        seq: { gt: Number(dto.seq) }
       },
       data: {
-        seq: { increment: 1 },
-      },
+        seq: { increment: 1 }
+      }
     });
     const insertedComment = await this.prismaService.comment.create({
       data: {
@@ -52,64 +78,121 @@ export class BoardService {
         parent: Number(dto.parent),
         articleNo: Number(dto.articleNo),
         userEmail: dto.userEmail,
-        contents: dto.contents,
-      },
+        contents: dto.contents
+      }
     });
     if (Number(dto.grp) === 0) {
-      this.prismaService.comment.update({
+      await this.prismaService.comment.update({
         where: {
-          no: Number(insertedComment.no),
+          no: insertedComment.no
         },
         data: {
-          grp: Number(insertedComment.no),
-        },
+          grp: Number(insertedComment.no)
+        }
       });
     }
     return null;
   }
+
   async deleteComment(comment: number): Promise<Comment> | null {
-    return this.prismaService.comment.delete({
+    return this.prismaService.comment.update({
       where: {
-        no: Number(comment),
+        no: Number(comment)
       },
+      data: {
+        contents: "deleted"
+      }
     });
   }
 
-  async fetchPage(page: number): Promise<Article[]> {
-    return this.prismaService.article.findMany({
+  async addLikeComment(userEmail: string, comment: number): Promise<Comment> | null {
+    await this.prismaService.user.update({
+      where: {
+        email: userEmail,
+      },
+      data: {
+        likeComment: {push: comment}
+      }
+    })
+
+    return this.prismaService.comment.update({
+      where: {
+        no: Number(comment)
+      },
+      data: {
+        likeCnt: { increment: 1 }
+      }
+    });
+  }
+
+  async subLikeComment(userEmail: string, comment: number): Promise<Comment> | null {
+    const { likeComment } = await this.prismaService.user.findUnique({
+      where: {
+        email: userEmail
+      },
+      select: {
+        likeComment: true
+      },
+    });
+    await this.prismaService.user.update({
+      where: {
+        email: userEmail
+      },
+      data: {
+        likeComment: {
+          set: likeComment.filter((no) => no !== comment),
+        },
+      },
+    });
+    return this.prismaService.comment.update({
+      where: {
+        no: Number(comment)
+      },
+      data: {
+        likeCnt: { decrement: 1 }
+      }
+    });
+  }
+
+  async fetchArticlesPage(page: number): Promise<any> {
+    const total = this.prismaService.article.count();
+    const articles = this.prismaService.article.findMany({
       take: 5,
       skip: (page - 1) * 5,
       orderBy: {
-        no: 'desc',
-      },
+        no: "desc"
+      }
     });
+    return { total: total, articles: articles };
   }
+
   async fetchNext(param: PageSelect): Promise<any> {
     const { sortOrder, skip, take, page } = param;
     let { startCursor, endCursor } = param;
-    const myCursor = sortOrder === 'desc' ? endCursor : startCursor;
+    const myCursor = sortOrder === "desc" ? endCursor : startCursor;
     const result = await this.prismaService.article.findMany({
-      take: sortOrder === 'desc' ? take : -take,
+      take: sortOrder === "desc" ? take : -take,
       ...(myCursor && { skip: 1, cursor: { no: myCursor } }),
       orderBy: {
-        no: sortOrder,
-      },
+        no: sortOrder
+      }
     });
     startCursor = result[0].no;
     endCursor = result[result.length - 1].no;
     return {
       startCursor,
       endCursor,
-      result,
+      result
     };
   }
+
   async addArticle(article: Article): Promise<Article> {
     return this.prismaService.article.create({
       data: {
         userEmail: article.userEmail,
         title: article.title,
-        contents: article.contents,
-      },
+        contents: article.contents
+      }
     });
   }
 }

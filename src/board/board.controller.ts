@@ -8,7 +8,7 @@ import {
   UseInterceptors,
   ParseFilePipe,
   FileTypeValidator,
-  Req, Delete, UseFilters
+  Req, Delete, UseFilters, Put
 } from "@nestjs/common";
 import { BoardService } from './board.service';
 import { Article, Photo, Comment, User } from '@prisma/client';
@@ -44,13 +44,24 @@ export class BoardController {
   @Public()
   @Get('/article/:articleNo/comment')
   async getAllComments(@Param('articleNo') no: number): Promise<Comment[]> {
-    return this.boardService.fetchAllComments(no);
+    return this.boardService.fetchAllCommentsV2(no);
   }
-  @Public()
+
   @Post('/article/:articleNo/comment')
-  async addComment(@Body() comment: Comment): Promise<Comment> {
+  async addComment(@Req() req, @Body() comment: Comment): Promise<Comment> {
+    console.log(req.user)
     return this.boardService.addComment(comment);
   }
+
+  // @Public()
+  // @Put('/article/:articleNo/comment/:commentNo')
+  // async putLikeComment(
+  //   @Param('commentNo') comment: number,
+  //   @Param('articleNo') article: number,
+  // ): Promise<Comment> {
+  //   return this.boardService.updateLikeComment(comment)
+  // }
+
   @Public()
   @UseFilters(new HttpExceptionFilter())
   @Delete('/article/:articleNo/comment/:commentNo')
@@ -61,10 +72,10 @@ export class BoardController {
     return this.boardService.deleteComment(comment);
   }
 
-
+  @Public()
   @Get('/article/:articleNo')
   async getArticleDetail(@Param('articleNo') no): Promise<Article | Article[]> {
-    return this.boardService.fetchArticleDetail(no);
+    return this.boardService.fetchArticleDetail(Number(no));
   }
 
   @Post('/article')
@@ -73,7 +84,7 @@ export class BoardController {
   }
 
   @Get(':page')
-  async getListByPage(@Param('page') page: number): Promise<Article[]> {
-    return this.boardService.fetchPage(page);
+  async getListByPage(@Param('page') page: number): Promise<any> {
+    return this.boardService.fetchArticlesPage(page);
   }
 }

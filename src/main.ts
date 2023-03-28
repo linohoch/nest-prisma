@@ -16,9 +16,10 @@ async function bootstrap() {
   //   next();
   // };
   app.enableCors({
-    origin: "*",
+    origin: "http://localhost:4200",
     methods: ['GET','PUT','POST','DELETE'],
-    credentials: true
+    credentials: true,
+    exposedHeaders: ['set-cookie'],
   });
   app.use(helmet({
     contentSecurityPolicy: false,

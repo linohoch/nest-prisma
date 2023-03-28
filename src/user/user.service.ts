@@ -22,6 +22,13 @@ export class UserService {
       data: data
     })
   }
+  async updateUserProvider(email: string, provider: string): Promise<User | null> {
+    return this.prismaService.user.update({
+        where: { email: String(email) },
+        data: { provider: provider }
+      }
+    );
+  }
 
   async fetchAllUsers(): Promise<User[]> {
     return this.prismaService.user.findMany();

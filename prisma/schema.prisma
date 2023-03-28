@@ -15,8 +15,8 @@ model Shop {
   logitude    String
   rpstPhoto   String    @map("rpst_photo")
   star        Int
-  insDate     DateTime  @default(now()) @map("ins_date")
-  upDate      DateTime  @updatedAt @map("up_date")
+  insDate     DateTime  @default(now()) @map("ins_date") @db.Timestamptz(3)
+  upDate      DateTime  @updatedAt @map("up_date") @db.Timestamptz(3)
   article     Article[]
   registBy    Int       @map("user_no")
   regist      User      @relation(fields: [registBy], references: [no])
@@ -30,14 +30,17 @@ model User {
   articles     Article[]
   shop         Shop[]
   comment      Comment[]
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   firstName    String      @map("first_name")
   lastName     String      @map("last_name")
   provider     String      @map("provider_type")
   token        UserToken[]
   roles        String[]    @default(["user"])
+  likeComment  Int[]       @map("like_comment")
+  likeArticle  Int[]       @map("like_article")
 }
 
+//
 // model UserRole {
 //   no     Int  @id @default(autoincrement()) @map("user_role_no")
 //   userNo Int
@@ -51,6 +54,13 @@ model User {
 //   name     String
 //   UserRole UserRole[]
 //   upDate   DateTime   @default(now())
+// }
+// model Like {
+//   no        Int    @id @default(autoincrement()) @map("like_no")
+//   userEamil String @map("user_eamil")
+//   user      User   @relation(fields: [userEamil], references: [email])
+//   articleNo Int     @map("article_no")
+//   article   Article @relation(fields: [articleNo], references: [no])
 // }
 
 model Article {
@@ -77,7 +87,7 @@ model Photo {
   upload    String   @map("upload_name")
   url       String
   size      Int
-  insDate   DateTime @default(now())
+  insDate   DateTime @default(now()) @map("ins_date") @db.Timestamptz(3)
 }
 
 model Comment {
@@ -86,13 +96,15 @@ model Comment {
   seq       Int
   lv        Int
   parent    Int
+  thread    Int[]
   articleNo Int      @map("article_no")
   article   Article  @relation(fields: [articleNo], references: [no])
   userEmail String   @map("user_email")
   user      User     @relation(fields: [userEmail], references: [email])
   contents  String
-  insDate   DateTime @default(now())
-  upDate    DateTime @updatedAt
+  insDate   DateTime @default(now()) @map("ins_date") @db.Timestamptz(3)
+  upDate    DateTime @updatedAt @map("up_date") @db.Timestamptz(3)
+  likeCnt   Int      @default(0) @map("like_cnt")
 }
 
 model UserToken {
@@ -101,5 +113,5 @@ model UserToken {
   user      User     @relation(fields: [userEmail], references: [email])
   token     String
   ip        String
-  insDate   DateTime @default(now())
+  insDate   DateTime @default(now()) @map("ins_date") @db.Timestamptz(3)
 }

@@ -29,8 +29,9 @@ export class AuthController {
     req.res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       secure: true,
-      maxAge: jwtConstants.refreshExp,
-      path: '/'
+      maxAge: jwtConstants.refreshExp * 1000,
+      path: '/',
+      sameSite: 'none',
     });
     return result;
   }
@@ -44,14 +45,14 @@ export class AuthController {
       audience: client_id
     });
     const payload = ticket.getPayload()
-    const user = payload.email
+    // const user = payload.email
 
-    const { email, roles } = await this.authService.oAuthSign(user);
+    const { email, roles } = await this.authService.oAuthSign(payload);
     const { refresh_token, ...result } = await this.authService.issueTokens(email, roles, req.ip);
     req.res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       secure: true,
-      maxAge: jwtConstants.refreshExp,
+      maxAge: jwtConstants.refreshExp * 1000,
       path: '/'
     });
     return result;
@@ -71,18 +72,33 @@ export class AuthController {
     req.res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       secure: true,
-      maxAge: jwtConstants.refreshExp
+      maxAge: jwtConstants.refreshExp * 1000
     });
     return result
   }
 
-  @UseGuards(AuthGuard("google"))
-  @Get("google/link")
+  @Public()
+  // @UseGuards(AuthGuard("google"))
+  @Post("google/link")
   async googleLink(@Request() req) {
-    const user = await this.userService.updateUser(req.user);
-    if (user) {
-      return HttpStatus.OK;
-    }
+    const client_id = this.config.get<string>("google.clientId");
+    const client = new OAuth2Client(client_id);
+    const ticket = await client.verifyIdToken({
+      idToken: req.body.credential,
+      audience: client_id
+    });
+    const payload = ticket.getPayload()
+    const google = payload.email
+
+    const { email, roles } = await this.userService.updateUserProvider(google, 'google');
+    const { refresh_token, ...result } = await this.authService.issueTokens(email, roles, req.ip);
+    req.res.cookie("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: true,
+      maxAge: jwtConstants.refreshExp * 1000,
+      path: '/'
+    });
+    return result;
   }
 
   @Public()
@@ -95,11 +111,14 @@ export class AuthController {
       req.res.cookie("refresh_token", refresh_token, {
         httpOnly: true,
         secure: true,
-        maxAge: jwtConstants.refreshExp
+        maxAge: jwtConstants.refreshExp * 1000
       });
       return token
     }
-    return { access_token: await this.authService.issueAccessToken(username, roles) };
+    // return { access_token: await this.authService.issueAccessToken(username, roles) };
+    this.logger.log('refresh')
+    return { username: username, access_token: await this.authService.issueAccessToken(username, roles) };
+
   }
 
   @Public()

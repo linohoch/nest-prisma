@@ -17,7 +17,7 @@ export class PrismaClientExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    this.logger.log(`prisma exception code : ${exception.code}//`);
+    this.logger.log(`prisma exception code : ${exception.code}//${exception.message}`);
 
     switch (exception.code) {
       case '2001': {
