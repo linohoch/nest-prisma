@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Put, Req, Request } from "@nestjs/common";
 import { UserService } from './user.service';
 import { User } from '@prisma/client';
-import { Public } from '../auth/custom.decorator';
+import { Public, Roles } from "../auth/custom.decorator";
 import { Role } from "../auth/role.enum";
 
 @Controller('/api/v1/user')
@@ -12,22 +12,32 @@ export class UserController {
   async getAllUsers(): Promise<User[]> {
     return this.userService.fetchAllUsers();
   }
+
   @Public()
-  @Post('signup')
+  @Post("signup")
   async addUser(@Body() data: User): Promise<User> {
     return this.userService.createUser(data);
   }
+
   @Public()
-  @Post('check')
+  @Post("check")
   async findUser(@Body() data): Promise<boolean> {
-     return !!await this.userService.findOne(data.email);
+    return !!await this.userService.findOne(data.email);
   }
-  @Public()
+
+  @Get("me")
+  async findMe(@Request() req): Promise<any> {
+    const { pw, ...userInfo } = await this.userService.findOne(req.user.username);
+    return userInfo;
+  }
+
+  @Roles(Role.Admin)
   @Post('role')
   async grantRole(@Body() data): Promise<any> {
     return await this.userService.grantRoles(data.username, Role.Admin)
   }
-  @Public()
+
+  @Roles(Role.Admin)
   @Put('role')
   async retrieveRole(@Body() data): Promise<any> {
     return await this.userService.retrieveRole(data.username, Role.Admin)

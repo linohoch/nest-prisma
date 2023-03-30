@@ -1,10 +1,11 @@
-import { Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
 import { Article, Comment, User } from "@prisma/client";
 import { PageSelect } from "./types";
 
 @Injectable()
 export class BoardService {
+  private readonly logger = new Logger(BoardService.name)
   constructor(private prismaService: PrismaService) {
   }
 
@@ -24,6 +25,7 @@ export class BoardService {
     });
   }
   async fetchArticleDetailHit(articleNo: number): Promise<any> {
+    console.log('ttt');
     return this.prismaService.article.update({
       where: {
         no: Number(articleNo)
@@ -100,18 +102,126 @@ export class BoardService {
         no: Number(comment)
       },
       data: {
-        contents: "deleted"
+        contents: "[deleted]",
+        isDelete: true
       }
     });
   }
 
+  async addArticle(article: Article): Promise<Article> {
+    return this.prismaService.article.create({
+      data: {
+        userEmail: article.userEmail,
+        title: article.title,
+        contents: article.contents
+      }
+    });
+  }
+  async updateArticle(user: string, no: number, article: Article): Promise<any> {
+    const { userEmail } = await this.prismaService.article.findUnique({
+      where: {
+        no: Number(no)
+      },
+      select: {
+        userEmail: true
+      }
+    })
+    if(userEmail!==user){ return new HttpException('no authority', HttpStatus.FORBIDDEN)}
+
+    return this.prismaService.article.update({
+      where: {
+        no: Number(no)
+      },
+      data: {
+        title: article.title,
+        contents: article.contents
+      }
+    })
+  }
+  async deleteArticle(no: number): Promise<any> {
+    return this.prismaService.article.update({
+      where: {
+        no: no
+      },
+      data: {
+        title: '[deleted]',
+        contents: '[deleted]',
+        isDelete: true
+      }
+    })
+  }
+
+//User
+
+  async addLikeArticle(userEmail: string, article: number):Promise<any> {
+    const { likeArticle } = await this.prismaService.user.findUnique({
+      where: {
+        email: userEmail
+      },
+      select: {
+        likeArticle: true
+      }
+    })
+    if(likeArticle.includes(Number(article))){
+      this.logger.log('invalid call')
+      return this.prismaService.article.findUnique({
+        where: {
+          no: Number(article)
+        }
+      })
+    }
+    await this.prismaService.user.update({
+      where: {
+        email: userEmail,
+      },
+      data: {
+        likeArticle: {push: Number(article)}
+      }
+    })
+    return this.prismaService.article.update({
+      where: {
+        no: Number(article)
+      },
+      data: {
+        likeCnt: { increment: 1 }
+      }
+    });
+  }
+  async subLikeArticle(userEmail: string, article: number):Promise<any> {
+    const { likeArticle } = await this.prismaService.user.findUnique({
+      where: {
+        email: userEmail
+      },
+      select: {
+        likeArticle: true
+      }
+    })
+    await this.prismaService.user.update({
+      where: {
+        email: userEmail,
+      },
+      data: {
+        likeArticle: {
+          set: likeArticle.filter((no)=> no !== Number(article))
+        },
+      }
+    })
+    return this.prismaService.article.update({
+      where: {
+        no: Number(article),
+      },
+      data: {
+        likeCnt: { decrement:1 }
+      }
+    })
+  }
   async addLikeComment(userEmail: string, comment: number): Promise<Comment> | null {
     await this.prismaService.user.update({
       where: {
         email: userEmail,
       },
       data: {
-        likeComment: {push: comment}
+        likeComment: {push: Number(comment)}
       }
     })
 
@@ -140,7 +250,7 @@ export class BoardService {
       },
       data: {
         likeComment: {
-          set: likeComment.filter((no) => no !== comment),
+          set: likeComment.filter((no) => no !== Number(comment)),
         },
       },
     });
@@ -186,13 +296,4 @@ export class BoardService {
     };
   }
 
-  async addArticle(article: Article): Promise<Article> {
-    return this.prismaService.article.create({
-      data: {
-        userEmail: article.userEmail,
-        title: article.title,
-        contents: article.contents
-      }
-    });
-  }
 }

@@ -35,6 +35,7 @@ export class AuthController {
     });
     return result;
   }
+
   @Public()
   @Post("google/callback2")
   async googleAuthWithNoPassport(@Request() req) {
@@ -45,9 +46,8 @@ export class AuthController {
       audience: client_id
     });
     const payload = ticket.getPayload()
-    // const user = payload.email
 
-    const { email, roles } = await this.authService.oAuthSign(payload);
+    const { email, roles } = await this.authService.findGoogleUser(payload);
     const { refresh_token, ...result } = await this.authService.issueTokens(email, roles, req.ip);
     req.res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
@@ -57,28 +57,8 @@ export class AuthController {
     });
     return result;
   }
-  @Public()
-  @UseGuards(AuthGuard("google"))
-  @Get("google")
-  async googleAuth(@Request() req): Promise<void> {
-    // req.res.header("Access-Control-Allow-Origin", "*")
-  }
-  @Public()
-  @UseGuards(AuthGuard("google"))
-  @Get("google/callback")
-  async googleAuthCallback(@Request() req, @Res() res) {
-    const { email, roles } = await this.authService.oAuthSign(req.user);
-    const { refresh_token, ...result } = await this.authService.issueTokens(email, roles, req.ip);
-    req.res.cookie("refresh_token", refresh_token, {
-      httpOnly: true,
-      secure: true,
-      maxAge: jwtConstants.refreshExp * 1000
-    });
-    return result
-  }
 
   @Public()
-  // @UseGuards(AuthGuard("google"))
   @Post("google/link")
   async googleLink(@Request() req) {
     const client_id = this.config.get<string>("google.clientId");
@@ -100,6 +80,27 @@ export class AuthController {
     });
     return result;
   }
+
+  @Public()
+  @UseGuards(AuthGuard("google"))
+  @Get("google")
+  async googleAuth(@Request() req): Promise<void> {
+    //
+  }
+  @Public()
+  @UseGuards(AuthGuard("google"))
+  @Get("google/callback")
+  async googleAuthCallback(@Request() req, @Res() res) {
+    const { email, roles } = await this.authService.findGoogleUser(req.user);
+    const { refresh_token, ...result } = await this.authService.issueTokens(email, roles, req.ip);
+    req.res.cookie("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: true,
+      maxAge: jwtConstants.refreshExp * 1000
+    });
+    return result
+  }
+
 
   @Public()
   @UseGuards(JwtRefreshGuard)

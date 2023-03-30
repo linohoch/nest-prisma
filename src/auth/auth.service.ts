@@ -95,12 +95,13 @@ export class AuthService {
     return this.userService.deleteTokens(username);
   }
 
-  async oAuthSign(user: any) {
+  async findGoogleUser(user: any) {
     const registered = await this.userService.findOne(user.email)
     if(!registered) {
       throw new HttpException('need signup first', HttpStatus.ACCEPTED)
     }
-    if(registered.provider!==user.provider) {
+    if(registered.provider!=='google') {
+      //user.iss 'https://accounts.google.com'
       throw new HttpException( 'need link', HttpStatus.ACCEPTED)
     }
     return registered
