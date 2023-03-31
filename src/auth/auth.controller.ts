@@ -116,7 +116,6 @@ export class AuthController {
       });
       return token
     }
-    // return { access_token: await this.authService.issueAccessToken(username, roles) };
     this.logger.log('refresh')
     return { username: username, access_token: await this.authService.issueAccessToken(username, roles) };
 

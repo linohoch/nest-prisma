@@ -4,18 +4,20 @@ import { HttpException, HttpStatus, Injectable, Logger, UnauthorizedException } 
 import { jwtConstants } from '../constants';
 import { UserService } from "../../user/user.service";
 import { CacheService } from "../../cache/cache.service";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class JwtAccessTokenStrategy extends PassportStrategy(Strategy, 'jwt-access') {
   private readonly logger = new Logger(JwtAccessTokenStrategy.name)
   constructor(
     private userService: UserService,
-    private cacheService: CacheService
+    private cacheService: CacheService,
+    private config: ConfigService
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: jwtConstants.secret
+      secretOrKey: config.get('secret')
     });
   }
 

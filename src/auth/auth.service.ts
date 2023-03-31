@@ -15,6 +15,7 @@ import { compare } from "bcrypt";
 import { PrismaService } from "../prisma.service";
 import { CacheService } from "../cache/cache.service";
 import * as http from "http";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AuthService {
@@ -23,7 +24,8 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
-    private cacheService: CacheService
+    private cacheService: CacheService,
+    private config: ConfigService
   ) {
   }
 
@@ -66,7 +68,7 @@ export class AuthService {
       username: username,
       roles: roles
     }, {
-      secret: jwtConstants.secret,
+      secret: this.config.get('secret'),
       expiresIn: jwtConstants.exp,
       issuer: jwtConstants.iss
     });
@@ -79,7 +81,7 @@ export class AuthService {
       username: username,
       roles: roles
     }, {
-      secret: jwtConstants.refreshSecret,
+      secret: this.config.get('refreshSecret'),
       expiresIn: jwtConstants.refreshExp,
       issuer: jwtConstants.iss
     });

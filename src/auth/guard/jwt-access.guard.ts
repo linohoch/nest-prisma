@@ -8,13 +8,15 @@ import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_KEY } from "../custom.decorator";
 import { JwtService } from "@nestjs/jwt";
 import { jwtConstants } from "../constants";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class JwtAccessGuard extends AuthGuard("jwt-access") {
   private readonly logger = new Logger(JwtAccessGuard.name);
 
   constructor(private reflector: Reflector,
-              private jwtService: JwtService) {
+              private jwtService: JwtService,
+              private config: ConfigService) {
     super();
   }
 
@@ -36,7 +38,7 @@ export class JwtAccessGuard extends AuthGuard("jwt-access") {
     }
     try {
       const token = authorization.replace("Bearer ", "");
-      this.jwtService.verify(token, { secret: jwtConstants.secret });
+      this.jwtService.verify(token, { secret: this.config.get('secret') });
     } catch (err) {
       this.logger.log(`jwt err: ${err.message} ${err.name}`);
       if (err.name === "TokenExpiredError") {

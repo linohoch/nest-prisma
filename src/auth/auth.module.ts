@@ -22,10 +22,6 @@ import { GoogleAuthStrategy } from "./guard/google-auth.strategy";
     PassportModule,
     JwtModule,
     ConfigModule,
-    // JwtModule.register({
-    //   secret: jwtConstants.secret,
-    //   signOptnions: { expiresIn: '60s' },
-    // }),
     DevtoolsModule.register({
       http: process.env.NODE_ENV !== 'production',
     }),

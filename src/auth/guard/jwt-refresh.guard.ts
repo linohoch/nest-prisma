@@ -4,22 +4,19 @@ import {
   HttpException, HttpStatus,
   Injectable,
   Logger,
-  UnauthorizedException
 } from "@nestjs/common";
-import { Observable } from "rxjs";
 import { JwtService } from "@nestjs/jwt";
-import { jwtConstants } from "../constants";
 import { AuthGuard } from "@nestjs/passport";
-import { IS_PUBLIC_KEY } from "../custom.decorator";
 import { Reflector } from "@nestjs/core";
-import { isUndefined } from "@nestjs/common/utils/shared.utils";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class JwtRefreshGuard extends AuthGuard("jwt-refresh") {
   private readonly logger = new Logger(JwtRefreshGuard.name);
 
   constructor(private reflector: Reflector,
-              private jwtService: JwtService) {
+              private jwtService: JwtService,
+              private config: ConfigService) {
     super();
   }
 
@@ -31,7 +28,7 @@ export class JwtRefreshGuard extends AuthGuard("jwt-refresh") {
     try {
       token = req.cookies["refresh_token"];
       this.logger.log(`${!!token}`)
-      this.jwtService.verify(token, { secret: jwtConstants.refreshSecret });
+      this.jwtService.verify(token, { secret: this.config.get('refreshSecret') });
     } catch (err) {
       this.logger.log(`jwt-r err: ${err.name}: ${err.message}`);
       if (err.name === "TokenExpiredError") {
