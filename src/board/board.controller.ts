@@ -37,6 +37,7 @@ export class BoardController {
     return this.boardService.fetchPhotos(articleNo)
   }
 
+  @Public()
   @Delete("/article/:articleNo/photo/:photoNo")
   async deletePhoto(
     @Param('articleNo') articleNo,
@@ -106,14 +107,13 @@ export class BoardController {
    * @param files file의 originalname에 본문 식별용도로 uuid-가 붙어서 온다.
    * @param body
    */
+  @Public()
   @Post("/article")
   @UseInterceptors(FilesInterceptor("image", 10, multerOptions))
   async addArticle(@Request() req,
                    @UploadedFiles() files: Array<Express.Multer.File>,
                    @Body() body): Promise<any> {
     const article = JSON.parse(JSON.stringify(body))
-    article.userEmail = req.user.username;
-
     //
     AWS.config.update({
       credentials: {
@@ -146,13 +146,13 @@ export class BoardController {
       }
     }
     //
+    console.log(article);
     const articleAdded = await this.boardService.addArticle(article);
     const articleNo = articleAdded.no
 
     //
     photos.forEach(photo=>{
       photo.articleNo=articleNo
-      console.log(photo);
     })
     await this.boardService.addPhotos(photos)
 
@@ -258,8 +258,10 @@ export class BoardController {
   }
 
   @Public()
-  @Put("article/anny")
-  async editArticleAnonymous(@Body() article: Article): Promise<any> {
+  @Put("article/anny/:articleNo")
+  async editArticleAnonymous(
+    @Param("articleNo") no: number,
+    @Body() article: Article): Promise<any> {
     return this.boardService.updateAnny(article);
   }
 

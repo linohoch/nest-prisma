@@ -5,7 +5,7 @@ import * as csurf from 'csurf';
 import { PrismaClientExceptionFilter } from './filter/prisma-client-exception/prisma-client-exception.filter';
 import * as cookieParser from "cookie-parser";
 import { ConfigService } from "@nestjs/config";
-import { json, urlencoded } from "express";
+import * as express from "express";
 import * as bodyParser from "body-parser";
 
 async function bootstrap() {
@@ -36,8 +36,8 @@ async function bootstrap() {
   app.use(cookieParser());
   // app.use(bodyParser.json())
   // app.use(bodyParser.urlencoded({extended: true}))
-  // app.use(json());
-  // app.use(urlencoded({extended: true}))
+  app.use(express.json( {limit:'i0mb'}));
+  app.use(express.urlencoded({limit:'10mb', extended: true}))
 
   // app.use(allowCrossDomain)
   // app.use(

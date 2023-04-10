@@ -133,5 +133,17 @@ export class AuthController {
     });
     return HttpStatus.OK;
   }
+  @Public()
+  @UseGuards(JwtRefreshGuard)
+  @Delete("unregister")
+  async deleteUser(@Request() req) {
+    await this.userService.deleteUser(req.user.username);
+    await req.res.cookie("refresh_token", "", {
+      httpOnly: true,
+      secure: true,
+      maxAge: 0
+    });
+    return HttpStatus.OK;
+  }
 
 }

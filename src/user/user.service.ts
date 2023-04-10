@@ -97,6 +97,11 @@ export class UserService {
       }
     })
   }
+  async deleteUser(username:string):Promise<any> {
+    return this.prismaService.user.delete({
+      where: {email: username}
+    })
+  }
 
   // async updateUser(user: User): Promise<User> {
   //   return this.prismaService.user.update({
