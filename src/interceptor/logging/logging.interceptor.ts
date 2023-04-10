@@ -11,9 +11,8 @@ export class LoggingInterceptor implements NestInterceptor {
     const { ip, method, path: url } = request;
 
     this.logger.log(
-      `${method} [${url}] ${userAgent} ${ip} ${context.getClass().name} ${
-        context.getHandler().name
-      }`,
+      `${method} [${url}] ${context.getClass().name} ${context.getHandler().name}
+       ${userAgent} [${ip}]`,
     );
 
     return next.handle();

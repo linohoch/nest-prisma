@@ -19,6 +19,7 @@ import { CacheService } from "./cache/cache.service";
 import { RolesGuard } from "./auth/guard/role.guard";
 import { ConfigModule } from "@nestjs/config";
 import configuration from "./config/configuration";
+import { MulterModule} from "@nestjs/platform-express";
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import configuration from "./config/configuration";
       isGlobal: true,
       ttl: 5, // seconds
       max: 10 // maximum number of items in cache
-    })
+    }),
   ],
   controllers: [AppController],
   providers: [

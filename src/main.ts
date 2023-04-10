@@ -5,6 +5,8 @@ import * as csurf from 'csurf';
 import { PrismaClientExceptionFilter } from './filter/prisma-client-exception/prisma-client-exception.filter';
 import * as cookieParser from "cookie-parser";
 import { ConfigService } from "@nestjs/config";
+import { json, urlencoded } from "express";
+import * as bodyParser from "body-parser";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,6 +17,7 @@ async function bootstrap() {
   //   res.header(`Access-Control-Allow-Methods`, `GET,PUT,POST,DELETE`);
   //   next();
   // };
+
   app.enableCors({
     origin: "http://localhost:4200",
     methods: ['GET','PUT','POST','DELETE'],
@@ -31,6 +34,11 @@ async function bootstrap() {
     },
   }));
   app.use(cookieParser());
+  // app.use(bodyParser.json())
+  // app.use(bodyParser.urlencoded({extended: true}))
+  // app.use(json());
+  // app.use(urlencoded({extended: true}))
+
   // app.use(allowCrossDomain)
   // app.use(
   //   helmet.contentSecurityPolicy({

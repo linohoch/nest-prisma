@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
-import { Article, Comment, User } from "@prisma/client";
+import { Article, Comment, Photo, User } from "@prisma/client";
 import { PageSelect } from "./types";
 
 @Injectable()
@@ -21,20 +21,35 @@ export class BoardService {
     return this.prismaService.article.findUnique({
       where: {
         no: Number(articleNo)
-      }
+      },
     });
   }
   async fetchArticleDetailHit(articleNo: number): Promise<any> {
-    console.log('ttt');
+    console.log('hitup');
     return this.prismaService.article.update({
       where: {
         no: Number(articleNo)
       },
       data: {
         hitCnt: { increment: 1 }
-      }
+      },
     });
   }
+  async fetchPhotos(articleNo: number): Promise<any> {
+    return this.prismaService.photo.findMany({
+      where: {
+        articleNo: Number(articleNo)
+      }
+    })
+  }
+  async delete(photoNo: number): Promise<any> {
+    return this.prismaService.photo.delete({
+      where: {
+        no: Number(photoNo),
+      }
+    })
+  }
+
 
   async fetchAllComments(articleNo: number): Promise<Comment[]> {
     return this.prismaService.comment.findMany({
@@ -113,9 +128,52 @@ export class BoardService {
       data: {
         userEmail: article.userEmail,
         title: article.title,
-        contents: article.contents
+        contents: article.contents,
+        pw: article.pw?article.pw:null
       }
     });
+  }
+  async updateAnny(article: Article) {
+    return this.prismaService.article.update({
+      where: {
+        no: Number(article.no)
+      },
+      data: {
+        title: article.title,
+        contents: article.contents,
+        pw: article.pw
+      }
+    })
+  }
+  async deleteAnny(no: number) {
+    // if(await this.matchAnnyPw(article)){
+      return this.prismaService.article.update({
+        where: {
+          no: Number(no)
+        },
+        data: {
+          title: '[deleted]',
+          contents: '[deleted]',
+          isDelete: true
+        }
+      })
+    // }
+  }
+  async matchAnnyPw(article: Article): Promise<boolean> {
+    const { userEmail, pw } = await this.prismaService.article.findUnique({
+      where: {
+        no: Number(article.no)
+      },
+      select: {
+        userEmail: true,
+        pw: true,
+      }
+    })
+    if(userEmail!=='anonymous' || pw!==article.pw){
+      new HttpException('no authority', HttpStatus.FORBIDDEN)
+      return false
+    }
+    return true
   }
   async updateArticle(user: string, no: number, article: Article): Promise<any> {
     const { userEmail } = await this.prismaService.article.findUnique({
@@ -296,4 +354,20 @@ export class BoardService {
     };
   }
 
+  addPhoto(photo:any): Promise<Photo> {
+    return this.prismaService.photo.create({
+      data:{
+        articleNo: Number(photo.articleNo),
+        origin: photo.origin,
+        upload: photo.upload,
+        url: photo.url,
+        size: photo.size
+      }
+    })
+  }
+  addPhotos(photos:Photo[]): Promise<any> {
+    return this.prismaService.photo.createMany({
+      data: photos
+    })
+  }
 }

@@ -8,33 +8,156 @@ import {
   UseInterceptors,
   ParseFilePipe,
   FileTypeValidator,
-  Req, Delete, UseFilters, Put, Request, Query, Logger
+  Req, Delete, UseFilters, Put, Request, Query, Logger, HttpException, HttpStatus, UploadedFiles
 } from "@nestjs/common";
-import { BoardService } from './board.service';
-import { Article, Photo, Comment, User } from '@prisma/client';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { multerOptions } from '../config/multerOptions';
-import { Public } from '../auth/custom.decorator';
+import { BoardService } from "./board.service";
+import { Article, Photo, Comment, User } from "@prisma/client";
+import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
+import { multerOptions } from "../config/multerOptions";
+import { Public } from "../auth/custom.decorator";
 import { HttpExceptionFilter } from "../filter/http-exception/http-exception.filter";
+import multer, { memoryStorage } from "multer";
+import * as AWS from "aws-sdk";
+import { ConfigService } from "@nestjs/config";
+import { v4 as uuidv4 } from "uuid";
 
-@Controller('/api/v1/board')
+@Controller("/api/v1/board")
 export class BoardController {
-  private readonly logger = new Logger(BoardController.name)
-  constructor(private boardService: BoardService) {}
+  private readonly logger = new Logger(BoardController.name);
 
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file', multerOptions))
-  uploadFile(
-    @UploadedFile()
-    file: Express.Multer.File,
-    // @UploadedFile(
-    //   // new ParseFilePipe({
-    //   //   validators: [new FileTypeValidator({ fileType: /\.(jpg|jpeg)$/ })],
-    //   // }),
-    // )
-    @Body() body,
+  constructor(private boardService: BoardService,
+              private config: ConfigService) {
+  }
+
+  @Public()
+  @Get("/article/:articleNo/photo")
+  async getPhotos(
+    @Param('articleNo') articleNo
+  ){
+    return this.boardService.fetchPhotos(articleNo)
+  }
+
+  @Delete("/article/:articleNo/photo/:photoNo")
+  async deletePhoto(
+    @Param('articleNo') articleNo,
+    @Param('photoNo') photoNo
   ) {
-    console.log(body);
+    const deleted =  await this.boardService.delete(photoNo)
+    //TODO service
+    AWS.config.update({
+      credentials: {
+        accessKeyId: this.config.get("ACCESS_KEY_ID"),
+        secretAccessKey: this.config.get("SECRET_ACCESS_KEY")
+      },
+      region: this.config.get("REGION")
+    });
+    const s3Client = new AWS.S3();
+    const result = await s3Client.deleteObject({
+      Bucket:this.config.get('BUCKET'),
+      Key: deleted.upload
+    })
+    return deleted.no
+  }
+
+  @Public()
+  @Post("/article/:articleNo/photo")
+  @UseInterceptors(FileInterceptor("image", multerOptions))
+  async uploadFile(
+    @Param('articleNo') articleNo,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body
+  ) {
+    AWS.config.update({
+      credentials: {
+        accessKeyId: this.config.get("ACCESS_KEY_ID"),
+        secretAccessKey: this.config.get("SECRET_ACCESS_KEY")
+      },
+      region: this.config.get("REGION")
+    });
+    const date = new Date();
+    const dateFormat = date.toISOString().slice(0, 10);
+    const key = dateFormat + "-" + uuidv4() + "-" + file.originalname;
+    const s3Client = new AWS.S3();
+    try {
+      const s3Object = await s3Client.upload({
+        Bucket: this.config.get("BUCKET"),
+        Body: file.buffer,
+        Key: key
+      }).promise();
+      const result = await this.boardService.addPhoto({
+        articleNo: articleNo,
+        origin: file.originalname,
+        upload: s3Object.Key,
+        url: s3Object.Location,
+        size: file.size,
+      })
+      return { message:'success', result };
+    } catch (err) {
+      // throw err
+      this.logger.log('upload failed',err.message,'//',file)
+      return { message:'fail', }
+    }
+
+  }
+
+  /**
+   *
+   * @param req
+   * @param files file의 originalname에 본문 식별용도로 uuid-가 붙어서 온다.
+   * @param body
+   */
+  @Post("/article")
+  @UseInterceptors(FilesInterceptor("image", 10, multerOptions))
+  async addArticle(@Request() req,
+                   @UploadedFiles() files: Array<Express.Multer.File>,
+                   @Body() body): Promise<any> {
+    const article = JSON.parse(JSON.stringify(body))
+    article.userEmail = req.user.username;
+
+    //
+    AWS.config.update({
+      credentials: {
+        accessKeyId: this.config.get("ACCESS_KEY_ID"),
+        secretAccessKey: this.config.get("SECRET_ACCESS_KEY")
+      },
+      region: this.config.get("REGION")
+    });
+    const s3Client = new AWS.S3();
+    const photos = []
+    for(const file of files){
+      const date = new Date();
+      const dateFormat = date.toISOString().slice(0, 10);
+      const key = dateFormat + '-' + file.originalname;
+      try {
+        const s3Object = await s3Client.upload({
+          Bucket: this.config.get("BUCKET"),
+          Body: file.buffer,
+          Key: key
+        }).promise();
+
+        article.contents = article.contents.replaceAll(file.originalname, s3Object.Location)
+
+        photos.push({origin: file.originalname.slice(37),
+                     upload: s3Object.Key,
+                     url: s3Object.Location,
+                     size: file.size})
+      } catch (err) {
+        console.log('s3 failed');
+      }
+    }
+    //
+    const articleAdded = await this.boardService.addArticle(article);
+    const articleNo = articleAdded.no
+
+    //
+    photos.forEach(photo=>{
+      photo.articleNo=articleNo
+      console.log(photo);
+    })
+    await this.boardService.addPhotos(photos)
+
+    return articleAdded
+
   }
 
   @Public()
@@ -42,15 +165,16 @@ export class BoardController {
   async getAllArticles(): Promise<Article[]> {
     return this.boardService.fetchAllArticles();
   }
+
   @Public()
-  @Get('/article/:articleNo/comment')
-  async getAllComments(@Param('articleNo') no: number): Promise<Comment[]> {
+  @Get("/article/:articleNo/comment")
+  async getAllComments(@Param("articleNo") no: number): Promise<Comment[]> {
     return this.boardService.fetchAllCommentsV2(no);
   }
 
-  @Post('/article/:articleNo/comment')
+  @Post("/article/:articleNo/comment")
   async addComment(@Req() req, @Body() comment: Comment): Promise<Comment> {
-    console.log(req.user)
+    console.log(req.user);
     return this.boardService.addComment(comment);
   }
 
@@ -84,45 +208,65 @@ export class BoardController {
 
   @Public()
   @UseFilters(new HttpExceptionFilter())
-  @Delete('/article/:articleNo/comment/:commentNo')
+  @Delete("/article/:articleNo/comment/:commentNo")
   async deleteComment(
-    @Param('commentNo') comment: number,
-    @Param('articleNo') article: number,
+    @Param("commentNo") comment: number,
+    @Param("articleNo") article: number
   ): Promise<Comment> {
     return this.boardService.deleteComment(comment);
   }
 
   @Public()
-  @Get('/article/:articleNo')
-  async getArticleDetail(@Param('articleNo') no, @Query('isRead') isRead): Promise<Article | Article[]> {
-    if(isRead==='true'){
-      return this.boardService.fetchArticleDetail(Number(no))
+  @Get("/article/:articleNo")
+  async getArticleDetail(@Param("articleNo") no, @Query("isRead") isRead): Promise<Article | Article[]> {
+    if (isRead === "true") {
+      return this.boardService.fetchArticleDetail(Number(no));
     } else {
       return this.boardService.fetchArticleDetailHit(Number(no));
     }
   }
-  @Put('/article/:articleNo')
+
+  @Put("/article/:articleNo")
   async putArticle(@Request() req,
-                   @Param('articleNo') no,
+                   @Param("articleNo") no,
                    @Body() article: Article): Promise<Article> {
     return this.boardService.updateArticle(req.user.username, Number(no), article);
   }
 
-  @Post('/article')
-  async addArticle(@Request() req,
-                   @Body() article: Article): Promise<any> {
-    article.userEmail=req.user.username
+  @Delete("/article/:articleNo")
+  async deleteArticle(@Param("articleNo") no): Promise<any> {
+    return this.boardService.deleteArticle(Number(no));
+
+  }
+
+  @Get(":page")
+  async getListByPage(@Param("page") page: number): Promise<any> {
+    return this.boardService.fetchArticlesPage(page);
+  }
+
+  //annym public
+  @Public()
+  @Post("article/anny")
+  async addArticleAnonymous(@Body() article: Article): Promise<any> {
     return this.boardService.addArticle(article);
   }
 
-  @Delete('/article/:articleNo')
-  async deleteArticle(@Param('articleNo') no): Promise<any> {
-    return this.boardService.deleteArticle(Number(no))
-
+  @Public()
+  @Post("article/anny/pw")
+  async matchArticleAnonymous(@Body() article: Article): Promise<any> {
+    return this.boardService.matchAnnyPw(article);
   }
 
-  @Get(':page')
-  async getListByPage(@Param('page') page: number): Promise<any> {
-    return this.boardService.fetchArticlesPage(page);
+  @Public()
+  @Put("article/anny")
+  async editArticleAnonymous(@Body() article: Article): Promise<any> {
+    return this.boardService.updateAnny(article);
   }
+
+  @Public()
+  @Delete("article/anny/:articleNo")
+  async delArticleAnonymous(@Param("articleNo") no: number): Promise<any> {
+    return this.boardService.deleteAnny(no);
+  }
+
 }

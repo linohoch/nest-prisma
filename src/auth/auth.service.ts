@@ -53,6 +53,7 @@ export class AuthService {
   async validateRefreshToken(userToken) {
     const encryptedToken = await this.userService.getToken(userToken.username);
     if (!encryptedToken) {
+      this.logger.log(`refreshToken match failed: dbToken: ${encryptedToken}`);
       throw new HttpException("invalid token", HttpStatus.UNAUTHORIZED);
     }
     const isValid = true;

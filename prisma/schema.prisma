@@ -78,6 +78,7 @@ model Article {
   photos    Photo[]
   comments  Comment[]
   isDelete  Boolean   @default(false) @map("deleted")
+  pw        String?
 }
 
 model Photo {

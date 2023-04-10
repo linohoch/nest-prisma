@@ -1,5 +1,5 @@
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
-import { diskStorage } from 'multer';
+import multer, { diskStorage, memoryStorage } from "multer";
 import * as path from 'path';
 import e from 'express';
 import { HttpException, HttpStatus } from '@nestjs/common';
@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const multerOptions: MulterOptions = {
   limits: {
     fileSize: 1024 * 1024 * 5,
+    files: 10,
   },
   fileFilter(
     req: any,
@@ -33,16 +34,17 @@ export const multerOptions: MulterOptions = {
       );
     }
   },
-  storage: diskStorage({
-    destination: './upload',
-    filename(
-      req: e.Request,
-      file: Express.Multer.File,
-      callback: (error: Error | null, filename: string) => void,
-    ) {
-      callback(null, createFileName(file.originalname));
-    },
-  }),
+  storage: memoryStorage()
+  // storage: diskStorage({
+  //   destination: './upload',
+  //   filename(
+  //     req: e.Request,
+  //     file: Express.Multer.File,
+  //     callback: (error: Error | null, filename: string) => void,
+  //   ) {
+  //     callback(null, createFileName(file.originalname));
+  //   },
+  // }),
 };
 function createFileName(originalname: string) {
   const date = new Date();
