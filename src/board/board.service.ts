@@ -9,6 +9,99 @@ export class BoardService {
   constructor(private prismaService: PrismaService) {
   }
 
+  /**
+   * 최근 업데이트 comment 1개 조인,
+   * article 업데이트 정렬
+   * @param user  userEmail //TODO 유저번호로 변경
+   * @param page
+   * @param option? 'date' | 'like'
+   * @param order? 'desc' | 'asc'
+   * @param limit? 10
+   */
+  async findAllArticleRelationByEmail(user: string,
+                                      page = 1,
+                                      option: "date" | "like" = "date",
+                                      order: "desc" | "asc" = "desc",
+                                      limit = 10): Promise<any> {
+
+    const condition =(option==='date')
+      ?`order by article.up_date ${order} limit ${limit} offset ${(page-1) * limit}`
+      :`order by article.like_cnt ${order}, article.hit_cnt ${order} limit ${limit} offset ${(page-1) * limit}`;
+
+    this.logger.log(`page:${page},limit:${limit},orderBy:${option},order:${order}`)
+    return this.prismaService.$queryRawUnsafe(`
+        select article.article_no as "articleNo",
+               article.user_email as "userEmail",
+               article.title as "title",
+               article.like_cnt as "likeCnt",
+               article.hit_cnt as "hitCnt",
+               article.ins_date as "insDate",
+               article.up_date as "upDate",
+               article.contents as "contents",
+               article.deleted as "isDeleted",
+               comment_no as "commentNo",
+               comment.user_email as "cUserEmail",
+               comment.contents as "cContents",
+               comment.like_cnt as "cLikeCnt",
+               comment.ins_date as "cInsDate",
+               comment.up_date as "cUpDate"
+        from "Article" article
+                 left join
+             (select *
+              from "Comment" raw
+                       inner join
+                   (select max(up_date) as late
+                    from "Comment"
+                    group by article_no) max on raw.up_date = max.late) as comment
+             on article.article_no = comment.article_no
+        where article.user_email = '${user}'
+        ${condition}`);
+  }
+
+  /**
+   * 나의 댓글에 부모댓글 조인,
+   * 부모댓글이 없는 경우 게시글 조인
+   * 부모댓글 or 게시글 and 댓글 중 가장 최근 업데이트 기준 정렬
+   * @param user  userEmail
+   * @param order? 'desc' | 'asc'
+   */
+  async findAllCommentsRelationByEmail(user: string,
+                                       order: "desc" | "asc" = "desc"): Promise<any> {
+    const condition = `order by late ${order}`
+    return this.prismaService.$queryRawUnsafe(`
+    select 
+        parent.comment_no as pCommentNo,
+        parent.user_email as pUserEmail,
+        parent.contents as pContents,
+        parent.like_cnt as pLikeCnt,
+        parent.ins_date as pInsDate,
+        parent.up_date as pUpDate,
+        parent.deleted as pIsDeleted,
+        article.article_no as articleNo,
+        article.user_email as aUserEmail,
+        article.title as aTitle,
+        article.contents as aContents,
+        article.hit_cnt as aHitCnt,
+        article.like_cnt as aLikeCnt,
+        article.ins_date as aInsDate,
+        article.up_date as aUpDate,
+        article.deleted as aIsDeleted,
+        comment.comment_no as no,
+        comment.user_email as userEmail,
+        comment.contents as contents,
+        comment.like_cnt as likeCnt,
+        comment.deleted as isDeleted,
+        comment.ins_date as insDate,
+        comment.up_date as upDate,
+        greatest(comment.up_date, parent.up_date, article.up_date) as late
+    from "Comment" comment
+         left join "Comment" parent on comment.parent=parent.comment_no
+         left join "Article" article on comment.article_no=article.article_no
+                                    and comment.parent=0
+    where comment.user_email = '${user}'
+    ${condition};`);
+  }
+
   async fetchAllArticles(): Promise<Article[]> {
     return this.prismaService.article.findMany({
       orderBy: {

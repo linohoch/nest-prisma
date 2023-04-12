@@ -30,37 +30,6 @@ export class BoardController {
   }
 
   @Public()
-  @Get("/article/:articleNo/photo")
-  async getPhotos(
-    @Param('articleNo') articleNo
-  ){
-    return this.boardService.fetchPhotos(articleNo)
-  }
-
-  @Public()
-  @Delete("/article/:articleNo/photo/:photoNo")
-  async deletePhoto(
-    @Param('articleNo') articleNo,
-    @Param('photoNo') photoNo
-  ) {
-    const deleted =  await this.boardService.delete(photoNo)
-    //TODO service
-    AWS.config.update({
-      credentials: {
-        accessKeyId: this.config.get("ACCESS_KEY_ID"),
-        secretAccessKey: this.config.get("SECRET_ACCESS_KEY")
-      },
-      region: this.config.get("REGION")
-    });
-    const s3Client = new AWS.S3();
-    const result = await s3Client.deleteObject({
-      Bucket:this.config.get('BUCKET'),
-      Key: deleted.upload
-    })
-    return deleted.no
-  }
-
-  @Public()
   @Post("/article/:articleNo/photo")
   @UseInterceptors(FileInterceptor("image", multerOptions))
   async uploadFile(
@@ -99,6 +68,36 @@ export class BoardController {
       return { message:'fail', }
     }
 
+  }
+  @Public()
+  @Get("/article/:articleNo/photo")
+  async getPhotos(
+    @Param('articleNo') articleNo
+  ){
+    return this.boardService.fetchPhotos(articleNo)
+  }
+
+  @Public()
+  @Delete("/article/:articleNo/photo/:photoNo")
+  async deletePhoto(
+    @Param('articleNo') articleNo,
+    @Param('photoNo') photoNo
+  ) {
+    const deleted =  await this.boardService.delete(photoNo)
+    
+    AWS.config.update({
+      credentials: {
+        accessKeyId: this.config.get("ACCESS_KEY_ID"),
+        secretAccessKey: this.config.get("SECRET_ACCESS_KEY")
+      },
+      region: this.config.get("REGION")
+    });
+    const s3Client = new AWS.S3();
+    const result = await s3Client.deleteObject({
+      Bucket:this.config.get('BUCKET'),
+      Key: deleted.upload
+    })
+    return deleted.no
   }
 
   /**
@@ -166,18 +165,6 @@ export class BoardController {
     return this.boardService.fetchAllArticles();
   }
 
-  @Public()
-  @Get("/article/:articleNo/comment")
-  async getAllComments(@Param("articleNo") no: number): Promise<Comment[]> {
-    return this.boardService.fetchAllCommentsV2(no);
-  }
-
-  @Post("/article/:articleNo/comment")
-  async addComment(@Req() req, @Body() comment: Comment): Promise<Comment> {
-    console.log(req.user);
-    return this.boardService.addComment(comment);
-  }
-
   @Put("/article/:articleNo/like")
   async putLikeArticle(@Request() req,
                        @Param("articleNo") article: number,
@@ -207,16 +194,6 @@ export class BoardController {
   }
 
   @Public()
-  @UseFilters(new HttpExceptionFilter())
-  @Delete("/article/:articleNo/comment/:commentNo")
-  async deleteComment(
-    @Param("commentNo") comment: number,
-    @Param("articleNo") article: number
-  ): Promise<Comment> {
-    return this.boardService.deleteComment(comment);
-  }
-
-  @Public()
   @Get("/article/:articleNo")
   async getArticleDetail(@Param("articleNo") no, @Query("isRead") isRead): Promise<Article | Article[]> {
     if (isRead === "true") {
@@ -242,6 +219,27 @@ export class BoardController {
   @Get(":page")
   async getListByPage(@Param("page") page: number): Promise<any> {
     return this.boardService.fetchArticlesPage(page);
+  }
+
+  @Public()
+  @Get("/article/:articleNo/comment")
+  async getAllComments(@Param("articleNo") no: number): Promise<Comment[]> {
+    return this.boardService.fetchAllCommentsV2(no);
+  }
+
+  @Post("/article/:articleNo/comment")
+  async addComment(@Req() req, @Body() comment: Comment): Promise<Comment> {
+    console.log(req.user);
+    return this.boardService.addComment(comment);
+  }
+
+  @UseFilters(new HttpExceptionFilter())
+  @Delete("/article/:articleNo/comment/:commentNo")
+  async deleteComment(
+    @Param("commentNo") comment: number,
+    @Param("articleNo") article: number
+  ): Promise<Comment> {
+    return this.boardService.deleteComment(comment);
   }
 
   //annym public

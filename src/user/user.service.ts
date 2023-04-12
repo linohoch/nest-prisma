@@ -16,6 +16,28 @@ export class UserService {
       where: { email: String(username) }
     });
   }
+  async selectUserInfoPublic(user: any){
+    const result = await this.prismaService.user.findUnique({
+      where: { email: String(user)},
+      include: {
+        articles: {
+          select: {
+            title: true,
+            likeCnt: true
+          }
+        },
+        comment: {
+          select: {
+            contents: true,
+            likeCnt: true
+          }
+        }
+      }
+    })
+    delete result['pw']
+    return result
+  }
+
   async updateUser(data: User): Promise<User | null> {
     return this.prismaService.user.update({
       where: { email: String(data.email) },
