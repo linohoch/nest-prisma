@@ -119,22 +119,27 @@ export class UserService {
       }
     })
   }
-  async deleteUser(username:string):Promise<any> {
-    return this.prismaService.user.delete({
-      where: {email: username}
+  async deleteUser(username:string, password:string):Promise<any> {
+    const { pw, no, ...rest} = await this.prismaService.user.findUnique({
+      where: {email: username},
+    })
+    const isValid = await bcrypt.compare(password, pw);
+    if(!isValid) {
+      return new HttpException('mismatch password',HttpStatus.UNAUTHORIZED)
+    }
+    return this.prismaService.user.update({
+      where: {email: username},
+      data: {
+        email: 'deleted-user-'+no,
+        pw: '',
+        firstName: '',
+        lastName:'',
+        provider:'',
+        roles:[],
+        likeArticle:[],
+        likeComment:[],
+      }
     })
   }
 
-  // async updateUser(user: User): Promise<User> {
-  //   return this.prismaService.user.update({
-  //     data: { pw: user.pw },
-  //     where: { no: user.no },
-  //   });
-  // }
-  //
-  // async deleteUser(no: number): Promise<User> {
-  //   return this.prismaService.user.delete({
-  //     where: { no: no },
-  //   });
-  // }
 }

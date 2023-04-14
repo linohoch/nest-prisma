@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, HttpStatus, Logger, Post, Request, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpStatus, Logger, Post, Request, Res, UseGuards } from "@nestjs/common";
 import { LocalAuthGuard } from "./guard/local-auth.guard";
 import { AuthService } from "./auth.service";
 import { JwtAccessGuard } from "./guard/jwt-access.guard";
@@ -31,7 +31,7 @@ export class AuthController {
       secure: true,
       maxAge: jwtConstants.refreshExp * 1000,
       path: '/',
-      sameSite: 'none',
+      // sameSite: 'none',
     });
     return result;
   }
@@ -135,9 +135,10 @@ export class AuthController {
   }
   @Public()
   @UseGuards(JwtRefreshGuard)
-  @Delete("unregister")
-  async deleteUser(@Request() req) {
-    await this.userService.deleteUser(req.user.username);
+  @Post("unregister")
+  async deleteUser(@Request() req,
+                   @Body() body) {
+    const result = await this.userService.deleteUser(req.user.username, body.password);
     await req.res.cookie("refresh_token", "", {
       httpOnly: true,
       secure: true,
