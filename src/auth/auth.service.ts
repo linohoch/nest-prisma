@@ -3,18 +3,14 @@ import {
   HttpStatus,
   Injectable,
   Logger,
-  NotFoundException,
-  UnauthorizedException
+  NotFoundException
 } from "@nestjs/common";
-import { UserService } from '../user/user.service';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
+import { UserService } from "../user/user.service";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcrypt";
+import { User } from "@prisma/client";
 import { jwtConstants } from "./constants";
-import { compare } from "bcrypt";
-import { PrismaService } from "../prisma.service";
 import { CacheService } from "../cache/cache.service";
-import * as http from "http";
 import { ConfigService } from "@nestjs/config";
 
 @Injectable()
@@ -51,17 +47,17 @@ export class AuthService {
   }
 
   async validateRefreshToken(userToken) {
-    const encryptedToken = await this.userService.getToken(userToken.username);
-    if (!encryptedToken) {
-      this.logger.log(`refreshToken match failed: dbToken: ${encryptedToken}`);
+    const { token } = await this.userService.getToken(userToken.username);
+    if (!token) {
+      this.logger.log(`refreshToken match failed`);
       throw new HttpException("invalid token", HttpStatus.UNAUTHORIZED);
     }
-    const isValid = true;
-    //TODO 저장방식 변경
-    if (isValid) {
-      return { username:userToken.username, roles:userToken.roles};
+    const isValid = userToken.exp === token;
+    if (!isValid) {
+      this.logger.log(`refreshToken match failed`);
+      throw new HttpException("invalid token", HttpStatus.UNAUTHORIZED);
     }
-    return null;
+    return { username: userToken.username, roles: userToken.roles };
   }
 
   async issueAccessToken(username: string, roles: string[]) {
@@ -69,7 +65,7 @@ export class AuthService {
       username: username,
       roles: roles
     }, {
-      secret: this.config.get('secret'),
+      secret: this.config.get("secret"),
       expiresIn: jwtConstants.exp,
       issuer: jwtConstants.iss
     });
@@ -86,7 +82,8 @@ export class AuthService {
       expiresIn: jwtConstants.refreshExp,
       issuer: jwtConstants.iss
     });
-    const result = this.userService.storeToken(username, refreshToken, ip);//TODO
+    const { exp } = this.jwtService.decode(refreshToken) as { [key: string]: any };
+    const result = this.userService.storeToken(username, exp, ip);
     if (result) {
       return refreshToken;
     }
@@ -104,7 +101,6 @@ export class AuthService {
       throw new HttpException('need signup first', HttpStatus.ACCEPTED)
     }
     if(registered.provider!=='google') {
-      //user.iss 'https://accounts.google.com'
       throw new HttpException( 'need link', HttpStatus.ACCEPTED)
     }
     return registered

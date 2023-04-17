@@ -83,11 +83,10 @@ export class UserService {
     });
   }
 
-  async storeToken(username: string, refreshToken: string, ip: string): Promise<any> {
+  async storeToken(username: string, exp: number, ip: string): Promise<any> {
     await this.deleteTokens(username)
-    const encryptedToken = await bcrypt.hash(refreshToken, 10)
     return this.prismaService.userToken.create({
-      data: { userEmail: username, token: encryptedToken, ip: ip}
+      data: { userEmail: username, token: exp, ip: ip}
     });
   }
 

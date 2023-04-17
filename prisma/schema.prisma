@@ -40,29 +40,6 @@ model User {
   likeArticle  Int[]       @map("like_article")
 }
 
-//
-// model UserRole {
-//   no     Int  @id @default(autoincrement()) @map("user_role_no")
-//   userNo Int
-//   user   User @relation(fields: [userNo], references: [no])
-//   roleNo Int
-//   role   Role @relation(fields: [roleNo], references: [no])
-// }
-//
-// model Role {
-//   no       Int        @id @default(autoincrement()) @map("role_no")
-//   name     String
-//   UserRole UserRole[]
-//   upDate   DateTime   @default(now())
-// }
-// model Like {
-//   no        Int    @id @default(autoincrement()) @map("like_no")
-//   userEamil String @map("user_eamil")
-//   user      User   @relation(fields: [userEamil], references: [email])
-//   articleNo Int     @map("article_no")
-//   article   Article @relation(fields: [articleNo], references: [no])
-// }
-
 model Article {
   no        Int       @id @default(autoincrement()) @map("article_no")
   userEmail String    @map("user_email")
@@ -114,7 +91,7 @@ model UserToken {
   no        Int      @id @default(autoincrement()) @map("Token_no")
   userEmail String   @map("user_email")
   user      User     @relation(fields: [userEmail], references: [email])
-  token     String
+  token     Int
   ip        String
   insDate   DateTime @default(now()) @map("ins_date") @db.Timestamptz(3)
 }
